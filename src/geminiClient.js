@@ -111,6 +111,58 @@ export async function generateImageWithMultipleReferences(apiKey, prompt, imageD
 }
 
 /**
+ * 投稿キャプション文を自動生成
+ */
+export async function generateCaption(apiKey, { coverTitle, coverSubtitle, introText, mainSlides, summaryItems }) {
+  const ai = new GoogleGenAI({ apiKey });
+
+  const slideSummary = (mainSlides || []).map((s, i) => `${i + 1}. ${s.title}: ${s.text}`).join('\n');
+  const summaryText = (summaryItems || []).join('、');
+
+  const systemPrompt = `あなたはInstagram投稿のキャプション文を書くプロのSNSマーケターです。
+以下の投稿内容に基づいて、Instagramのキャプション文を作成してください。
+
+【投稿内容】
+タイトル: ${coverTitle}
+サブタイトル: ${coverSubtitle || ''}
+導入: ${introText || ''}
+スライド内容:
+${slideSummary}
+まとめ: ${summaryText}
+
+【キャプション構成ルール】
+1. **1文目**: 結論と興味付け（読者が続きを読みたくなるフック）
+2. **本文**: 投稿内容の解説・深堀り（スライドの内容をより詳しく、読み応えのある文章で展開）
+3. **締め**: 今後も役立つ投稿をしていくこと + フォローのお願い（押しつけがましくなく、自然に）
+4. **ハッシュタグ**: 関連するハッシュタグを5つ（投稿ボリューム1,000〜100,000程度のミドルレンジを狙う。ニッチすぎず、大きすぎないタグ）
+
+【文体ルール】
+- 全体で約1000文字前後（800〜1200文字）
+- 親しみやすく、読みやすい文体
+- 適度に改行・空行を入れて読みやすくする
+- 絵文字は控えめに使用（1段落に1つ程度）
+- ハッシュタグは最後にまとめて改行して記載
+
+キャプション文のみを出力してください（説明や前置きは不要）。`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: systemPrompt,
+    config: {
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("キャプションの生成に失敗しました。もう一度お試しください。");
+  }
+  return text.trim();
+}
+
+/**
  * 文章からインスタ投稿構成を自動生成
  */
 export async function generatePostStructure(apiKey, sourceText) {

@@ -9,7 +9,7 @@ import {
   Settings, Download, Loader2, AlertCircle, Wand2, Eye, EyeOff, RefreshCw,
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -47,7 +47,7 @@ const FONT_STYLES = [
 
 // --- 表紙3層デザイン定義 ---
 const COVER_LAYOUTS = [
-  { id: 'frame_title', name: 'フレーム＋タイトル', icon: Layout, prompt: 'Do NOT add any additional frame or border — the background setting already provides the frame. Content layout inside the white area: The subtitle (in a bold outlined box with the main theme color border, prominent and eye-catching) is near the top center — make it clearly visible. The main title is EXTRA LARGE, EXTRA BOLD, heavy-weight dark text (or main theme color) centered in the middle — it must be the most dominant visual element, very impactful and attention-grabbing, with strong contrast. Use dramatic size (fill most of the width). The character is at the bottom-right, slightly overlapping into the bottom frame band. "Swipe ▸▸" in clearly readable text at the bottom-right inside the bottom color band. Eye-catch badge at top-left if enabled. Professional yet bold and eye-catching layout.' },
+  { id: 'frame_title', name: 'デコ＋タイトル', icon: Layout, prompt: 'Clean white background with decorative organic wave/blob shapes in the light blue (#BDE8F5) at the top and bottom edges — like flowing water or soft clouds. Use a navy-blue color palette: dark navy (#0F2854), medium blue (#1C4D8D), blue (#4988C4), and light blue (#BDE8F5). The subtitle (in a clean outlined rounded box with blue border) is placed in the upper-center area. The main title is SUPER LARGE, EXTRA BOLD with visible dark navy (#0F2854) outline/stroke around each character (outlined text style), using medium blue (#1C4D8D) or blue (#4988C4) as fill — centered in the middle, dominant and attention-grabbing. The character (chibi style) is at the bottom-left. "Swipe >>>" small text at the bottom-right. Eye-catch badge at top area if enabled. The overall feel is clean, trustworthy, and professional with a blue color scheme.' },
   { id: 'band', name: '帯', icon: Maximize, prompt: 'Text on a distinct solid colored horizontal banner strip across the image' },
   { id: 'pop_frame', name: 'ポップ枠', icon: Layers, prompt: 'Pop style design with a white inner frame border, decorative elements and bold layout' },
   { id: 'card', name: 'カード型', icon: Square, prompt: 'A centered white/light card panel floating on the full-bleed background image. Text is inside the card with rounded corners and shadow. Background visible around the card edges' },
@@ -56,7 +56,7 @@ const COVER_LAYOUTS = [
 const TITLE_DESIGNS = [
   { id: 'bold_fill', name: '太字塗り', icon: Type, prompt: 'Extra bold filled title text in the main theme color. Solid color fill, heavy weight, clean and professional with no effects. Business-grade bold sans-serif typography with strong presence.' },
   { id: 'shadow', name: 'ドロップシャドウ', icon: Type, prompt: 'Bold text with strong dramatic drop shadow for depth and impact' },
-  { id: 'frame', name: '枠文字', icon: BoxSelect, prompt: 'Text with visible border/outline stroke around each character, outlined typography' },
+  { id: 'frame', name: '枠文字', icon: BoxSelect, prompt: 'Title text with THICK visible dark navy (#0F2854) outline/stroke around each character. The text fill color is blue (#4988C4) or medium blue (#1C4D8D) while the outline is dark navy. This creates a bold, pop, eye-catching outlined typography effect — like manga or anime title styling. Very heavy weight, impactful.' },
   { id: 'gradient', name: 'グラデーション', icon: Palette, prompt: 'Text with gradient color fill effect, colorful typography' },
 ];
 
@@ -417,19 +417,19 @@ export default function InstaFeedMaker() {
   const [globalTextAlign, setGlobalTextAlign] = useState('center');
   const [headingStyle, setHeadingStyle] = useState('band_full');
   const [contentBoxStyle, setContentBoxStyle] = useState('white_full');
-  const [bgType, setBgType] = useState('frame');
+  const [bgType, setBgType] = useState('white');
   const [customBgColor, setCustomBgColor] = useState('#E2E8F0');
   const [bgDesc, setBgDesc] = useState('');
 
   const [useCustomMainColor, setUseCustomMainColor] = useState(true);
-  const [customMainColor, setCustomMainColor] = useState('#9AC9ED');
+  const [customMainColor, setCustomMainColor] = useState('#1C4D8D');
 
   const [useCharacter, setUseCharacter] = useState(true);
   const [characterSource, setCharacterSource] = useState('upload');
-  const [characterDesc, setCharacterDesc] = useState('ちびキャラスタイルのイラスト風日本人男性、デフォルメされた可愛い頭身、清潔感のある笑顔、カジュアルなシャツ姿');
+  const [characterDesc, setCharacterDesc] = useState('ちびキャラスタイルのイラスト風日本人女性、デフォルメされた可愛い頭身、明るい笑顔、カジュアルで可愛らしい服装');
   const [uploadedImage, setUploadedImage] = useState(() => { try { return localStorage.getItem('default_char_image') || null; } catch { return null; } });
-  const [characterSize, setCharacterSize] = useState('medium');
-  const [globalCharPos, setGlobalCharPos] = useState('bottom_right');
+  const [characterSize, setCharacterSize] = useState('chibi');
+  const [globalCharPos, setGlobalCharPos] = useState('bottom_left');
 
   // キャラ画像を圧縮してlocalStorageに永続保存
   const compressAndStoreImage = useCallback((dataUrl) => {
@@ -494,7 +494,7 @@ export default function InstaFeedMaker() {
   const [coverTitle, setCoverTitle] = useState('AI時代の\n最強スキルを\n完全解説');
   const [coverSubtitle, setCoverSubtitle] = useState('初心者でもOK！');
   const [coverLayout, setCoverLayout] = useState('frame_title');
-  const [titleDesign, setTitleDesign] = useState('bold_fill');
+  const [titleDesign, setTitleDesign] = useState('frame');
   const [subtitleDesign, setSubtitleDesign] = useState('outline_box');
   const [swipeGuide, setSwipeGuide] = useState('none');
   const [eyeCatchBadge, setEyeCatchBadge] = useState('label');
@@ -509,12 +509,21 @@ export default function InstaFeedMaker() {
     compressAndStoreRef('default_cover_ref', coverRefImage);
   }, [coverRefImage, compressAndStoreRef]);
 
-  const [introText, setIntroText] = useState('「AIって難しそう...」\n「何から始めればいい？」\nそんな悩みを一気に解決する\n実践メソッドを公開します。');
+  const [introText, setIntroText] = useState('「AIって難しそう...」\n「何から始めればいい？」\n\nそんな悩みを一気に解決！\n初心者でも今日から使える\n実践メソッドを完全公開します\n\n最後まで読めば、あなたも\nAIマスターに！');
   const [introCharExp, setIntroCharExp] = useState('困った顔で悩んでいるポーズ');
   const [introBubble, setIntroBubble] = useState(false);
   const [introBubbleText, setIntroBubbleText] = useState('');
-  const [introSwipe, setIntroSwipe] = useState(false);
+  const [introSwipe, setIntroSwipe] = useState(true);
   const [introRefImage, setIntroRefImage] = useState(() => { try { return localStorage.getItem('default_intro_ref') || null; } catch { return null; } });
+
+  // 導入キャラ個別設定
+  const [introCharImage, setIntroCharImage] = useState(() => { try { return localStorage.getItem('default_intro_char') || null; } catch { return null; } });
+  const [introCharDesc, setIntroCharDesc] = useState('ちびキャラスタイルのイラスト風日本人女性、困っている表情、悩んでいるポーズ');
+
+  // 導入キャラ画像をlocalStorageに永続保存
+  useEffect(() => {
+    compressAndStoreRef('default_intro_char', introCharImage);
+  }, [introCharImage, compressAndStoreRef]);
 
   // 導入参考画像をlocalStorageに永続保存
   useEffect(() => {
@@ -575,6 +584,11 @@ export default function InstaFeedMaker() {
   const [contentTab, setContentTab] = useState('cover');
   const [previewSlideIndex, setPreviewSlideIndex] = useState(0);
   const [copiedIndex, setCopiedIndex] = useState(null);
+
+  // --- キャプション生成 ---
+  const [captionText, setCaptionText] = useState('');
+  const [captionGenerating, setCaptionGenerating] = useState(false);
+  const [captionCopied, setCaptionCopied] = useState(false);
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
@@ -673,7 +687,11 @@ export default function InstaFeedMaker() {
     // Background Logic (セクション別背景対応)
     const slideBg = getSlideBg();
     if (slideBg.type === 'white') {
-      p += `Background: Pure clean white studio background. `;
+      if (type === 'cover') {
+        p += `Background: Clean white background with soft decorative organic wave/blob shapes in light blue (#BDE8F5) at the top and bottom edges. The center area is mostly white for clear text readability. The decorative shapes are subtle, like flowing water or soft clouds. Use the navy-blue palette: #0F2854, #1C4D8D, #4988C4, #BDE8F5 for all accent elements. `;
+      } else {
+        p += `Background: Clean white background. Use the navy-blue palette: #0F2854, #1C4D8D, #4988C4, #BDE8F5 for heading bands and accent elements. `;
+      }
     } else if (slideBg.type === 'solid') {
       p += `Background: Solid flat color background (hex color code ${slideBg.color}). `;
     } else if (slideBg.type === 'frame') {
@@ -733,12 +751,18 @@ export default function InstaFeedMaker() {
 
       const hasCharImage = characterSource === 'upload' && uploadedImage;
 
-      // 導入スライドのみ別人（悩んでいる女性ちびキャラ）を使う
+      // 導入スライドは個別キャラ設定を使用
+      // 導入・コンテンツは全身表示を強制
+      const effectiveSizePrompt = (type === 'intro' || type === 'main') ? 'FULL BODY shot — show the ENTIRE figure from head to feet, wide shot showing complete character' : sizePrompt;
+
       if (type === 'intro') {
         p += `**CHARACTER (DIFFERENT PERSON)**: This slide uses a DIFFERENT character from the cover/content slides. `;
-        p += `Draw a cute chibi-style (super-deformed, big head small body) illustration of a FEMALE character who looks troubled, confused, or worried. She is a different person from the main character. Cute anime-style chibi girl with a worried or anxious expression, representing the reader/viewer who has a problem. `;
+        if (introCharImage) {
+          p += `**HIGHEST PRIORITY — UPLOADED CHARACTER REFERENCE**: I have uploaded a reference image of this slide's character. You MUST use this uploaded image as the PRIMARY and DEFINITIVE reference. Reproduce this EXACT same character as closely as possible — the character's face, hairstyle, hair color, clothing, art style, body proportions, and overall appearance MUST match the uploaded reference image. Do NOT deviate from the uploaded image. This takes absolute priority over the text description below. `;
+        }
+        p += `Character: ${introCharDesc}. `;
         p += `Pose/Expression: ${expression}. `;
-        p += `Shot Type: ${sizePrompt}. `;
+        p += `Shot Type: ${effectiveSizePrompt}. `;
         p += `Position: Character is positioned at the ${posString} of the layout. `;
       } else {
         // 表紙・コンテンツ・まとめ: 登録キャラを強制使用
@@ -750,7 +774,7 @@ export default function InstaFeedMaker() {
           p += `**MAIN CHARACTER (MUST BE CONSISTENT)**: Use the EXACT same character across all slides (cover, content, summary). `;
           p += `Character: (${desc}) with (${expression}). `;
         }
-        p += `Shot Type: ${sizePrompt}. `;
+        p += `Shot Type: ${effectiveSizePrompt}. `;
         p += `Position: Character is positioned at the ${posString} of the layout. `;
       }
 
@@ -798,39 +822,37 @@ export default function InstaFeedMaker() {
     } else if (type === 'intro') {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       p += `LAYOUT: Introduction Slide. `;
-      p += `**BACKGROUND OVERRIDE**: The introduction slide MUST have a clean WHITE or very light background inside. Do NOT use dark or black backgrounds. Keep it bright and clean. `;
-      p += `**SLIDE STRUCTURE**: The outer border/frame is in the main theme color. Inside the frame, the background is WHITE. The top area (generous top margin ~12%) contains the heading. The bottom area (generous bottom margin ~12%)${introSwipe ? ' contains footer text "スワイプして読む ▸▸" in clearly readable text at the bottom-right inside the bottom color band' : ' is left clean with generous whitespace'}. The middle area contains the main content. `;
-      p += `HEADING: "${coverTitle.replace(/\n/g, ' ')}" (in Japanese). Heading style: ${headingObj.prompt} `;
-      p += `TEXT: "${introText.replace(/\n/g, ' ')}" (in Japanese) clearly written in the main area. `;
-      if (introSwipe) {
-        p += `FOOTER: "スワイプして読む ▸▸" text in clearly readable size at the bottom-right corner inside the bottom color band. `;
-      }
-      p += `Design: Storytelling vibe, light and approachable. `;
+      p += `**BACKGROUND OVERRIDE**: Clean WHITE background. NO dark/black backgrounds. NO wave or blob decorations. NO images, illustrations, or diagrams. `;
+      p += `**SLIDE STRUCTURE**: THREE sections stacked vertically with NO gaps or margins at top and bottom edges: `;
+      p += `1) TOP BAND: A colored heading band in the main theme color, flush to the very top edge of the image (ZERO margin/padding above it). Full width. Contains the heading text in white. The heading font size must be CLEARLY LARGER than the body text below, but sized so it fits in ONE single line — do NOT wrap to multiple lines. Bold and prominent, yet single-line. `;
+      p += `2) MIDDLE AREA (white background): The main text content area. Use a slightly SMALLER text size (not too large — moderate, readable size) with GENEROUS line spacing (comfortable breathing room between lines). Contains three parts: (a) the reader's worries/problems expressed emotionally, (b) what this post covers and the benefit, (c) a hook phrase to spark interest and encourage reading on. **EMPHASIS STYLING**: Use RED text color (#E04040) SPARINGLY — only for 1-2 truly important key phrases per slide (do NOT overuse red, keep it minimal and impactful). NO marker highlights. Also add 1-2 small, simple ONE-POINT ILLUSTRATIONS (tiny icons or doodles — like a lightbulb, sparkle, small arrow, question mark, etc.) scattered as accent decorations to make the layout cuter and more engaging. The character (FULL BODY, showing entire figure from head to feet) is placed at the bottom of this area. `;
+      p += `3) BOTTOM BAND: A colored band in the main theme color, flush to the very bottom edge of the image (ZERO margin/padding below it). Full width. ${introSwipe ? 'Place "Swipe >>>" text in white at the RIGHT side of the bottom band (right-aligned).' : ''} `;
+      p += `HEADING BAND: A brief, concise summary of the cover title "${coverTitle.replace(/\n/g, ' ')}" — condense it into a SHORT single-line heading (in Japanese). Use white BOLD text on the top colored band. The heading must be NOTICEABLY LARGER than the body text in the middle area, but compact enough to fit in one line. Heading style: ${headingObj.prompt} `;
+      p += `MAIN TEXT: "${introText.replace(/\n/g, ' ')}" (in Japanese). Structure the text as: first the reader's worries (use「」quotation marks), then the post overview and benefit, then a hook phrase. Use moderate (slightly small) text size — NOT too large. Keep comfortable line spacing with adequate whitespace between lines so it feels airy and easy to read. Use RED colored text SPARINGLY — only for 1-2 truly critical words or phrases (do NOT overuse). NO marker highlights. `;
+      p += `CHARACTER: FULL BODY (head to feet, entire figure visible). Placed at the bottom of the middle white area, above the bottom band. `;
+      p += `Design: Clean, trustworthy, text-focused with navy-blue color scheme (#0F2854, #1C4D8D, #4988C4, #BDE8F5). `;
     } else if (type === 'main' && data) {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Content Slide. `;
-      p += `**SLIDE STRUCTURE**: The outer border/frame is in the main theme color. Inside the frame, the background is WHITE. The top area (generous top margin ~12%) contains the heading band. The bottom area (generous bottom margin ~12%) contains footer text "スワイプ ▸▸" in clearly readable text at the bottom-right inside the bottom color band. The middle area contains the main content (image + text). `;
-      p += `Structure: Top heading band, Center Image, Bottom text area. `;
-      p += `HEADING: "${data.title}" (in Japanese). Heading style: ${headingObj.prompt} `;
-      p += `CENTER: Main visual is (${data.imageDesc}). `;
-      p += `BOTTOM: Short explanation text area "${data.text.replace(/\n/g, ' ')}" (in Japanese). `;
-      if (boxObj.id !== 'none') {
-        p += `Content Box: ${boxObj.prompt} `;
-      }
-      p += `FOOTER: "スワイプ ▸▸" text in clearly readable size at the bottom-right corner inside the bottom color band. `;
-      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same box style, same background, same margins. Match the design of slide 3 exactly. `;
+      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. NO inner borders, boxes, or frames inside the slide — only the top heading band. The layout is flat and clean with NO double framing. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the upper area (~40-50%) contains a visual. The lower area (~30-40%) contains the explanation text directly on the white background (NO surrounding box or border). Bottom-right has "スワイプ ▸▸" footer text. `;
+      p += `Structure: Top heading band → Upper visual → Lower text (no box). `;
+      p += `HEADING BAND: "${data.title}" (in Japanese) in white text on the colored band. Heading style: ${headingObj.prompt} `;
+      p += `UPPER AREA — VISUAL (prioritize clarity and understanding): Create a clear, easy-to-understand DIAGRAM or INFOGRAPHIC explaining (${data.imageDesc}). Use flowcharts, comparison charts, step-by-step diagrams, icons with labels, or structured visual explanations. **IMPORTANT: Keep text inside diagrams to an ABSOLUTE MINIMUM — use only short keywords, labels, or numbers (1-3 words max per label). AVOID long sentences or paragraphs inside the diagram. Too much text in generated images causes garbled/corrupted characters. Use icons, arrows, and visual elements instead of text wherever possible.** If a diagram is difficult for the topic, use recognizable imagery such as: actual tool/service logos, product images, usage screenshots, or illustrative icons (like "いらすとや" style). The goal is maximum comprehension — the reader should understand the concept at a glance. `;
+      p += `LOWER AREA: Explanation text "${data.text.replace(/\n/g, ' ')}" (in Japanese) placed directly on white background — NO box, NO border, NO frame around the text. `;
+      p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner. `;
+      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins. NO inner boxes or frames. Match the design of slide 3 exactly. `;
     } else if (type === 'summary') {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Summary/Conclusion Slide. `;
-      p += `**SLIDE STRUCTURE**: The outer border/frame is in the main theme color. Inside the frame, the background is WHITE. The top area (generous top margin ~12%) contains the heading band. The bottom area (generous bottom margin ~12%) contains footer text "📌 ブックマークがおすすめ！" in clearly readable text inside the bottom color band. The middle area contains the summary content. `;
+      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. At the very top is a colored heading band (full width) in the main theme color. Below the heading band is the summary content. The bottom has "📌 ブックマークがおすすめ！" footer text. `;
       p += `HEADING: "まとめ" (in Japanese). Heading style: ${headingObj.prompt} Same heading band as content slides. `;
       if (boxObj.id !== 'none') {
         p += `Content Box: ${boxObj.prompt} `;
       }
       p += `CONTENT: Bullet point list (${summaryItems.length} items, matching the number of content slides) in Japanese. Each item must be SHORT and concise (max 15 characters). Items: ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all items clearly as a numbered or bulleted list. `;
-      p += `FOOTER: "📌 ブックマークがおすすめ！" text in clearly readable size inside the bottom color band to encourage saving/bookmarking. `;
+      p += `FOOTER: "📌 ブックマークがおすすめ！" text in readable size at the bottom to encourage saving/bookmarking. `;
       p += `Match the same layout structure (heading band, box style, background, margins) as content slides. `;
     }
 
@@ -925,8 +947,10 @@ export default function InstaFeedMaker() {
     else if (slideType === 'summary') { refImg = summaryRefImage; }
     else if (slideType === 'main' && slideContent) { refImg = slideContent.refImage || contentDefaultRef; }
 
-    // グローバルキャラ画像
-    if (characterSource === 'upload' && uploadedImage) {
+    // キャラ画像（導入は個別キャラ優先、それ以外はグローバル）
+    if (slideType === 'intro' && introCharImage) {
+      charImg = introCharImage;
+    } else if (characterSource === 'upload' && uploadedImage) {
       charImg = uploadedImage;
     }
 
@@ -1098,6 +1122,36 @@ export default function InstaFeedMaker() {
     }
   }, [apiKey, coverTitle, introText, mainSlides, summaryItems, characterSource, uploadedImage, coverRefImage, introRefImage, summaryRefImage, generatePrompt]);
 
+  // --- キャプション生成 ---
+  const handleGenerateCaption = useCallback(async () => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    setCaptionGenerating(true);
+    try {
+      const result = await generateCaption(apiKey, {
+        coverTitle: coverTitle.replace(/\n/g, ' '),
+        coverSubtitle,
+        introText,
+        mainSlides,
+        summaryItems
+      });
+      setCaptionText(result);
+    } catch (e) {
+      alert('キャプション生成エラー: ' + e.message);
+    } finally {
+      setCaptionGenerating(false);
+    }
+  }, [apiKey, coverTitle, coverSubtitle, introText, mainSlides, summaryItems]);
+
+  const handleCopyCaption = useCallback(() => {
+    navigator.clipboard.writeText(captionText).then(() => {
+      setCaptionCopied(true);
+      setTimeout(() => setCaptionCopied(false), 2000);
+    });
+  }, [captionText]);
+
   const handleBatchGenerate = useCallback(async () => {
     if (!apiKey) {
       setShowSettings(true);
@@ -1263,6 +1317,7 @@ export default function InstaFeedMaker() {
               <button onClick={() => setActiveTab('edit')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'edit' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><Layout className="w-3 h-3" /> 手動作成</button>
               <button onClick={() => setActiveTab('ai')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'ai' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><Wand2 className="w-3 h-3" /> AI構成</button>
               <button onClick={() => setActiveTab('preview')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'preview' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><MonitorPlay className="w-3 h-3" /> 出力</button>
+              <button onClick={() => setActiveTab('caption')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'caption' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><FileText className="w-3 h-3" /> キャプション</button>
             </div>
             <button
               onClick={() => { setApiKeyInput(apiKey); setShowSettings(true); }}
@@ -1896,6 +1951,56 @@ export default function InstaFeedMaker() {
                       <textarea className="w-full text-sm p-3 border border-slate-200 rounded-lg focus:border-blue-400 outline-none resize-none" rows={4} value={introText} onChange={(e) => setIntroText(e.target.value)} />
                     </div>
                     {useCharacter && <SlideCharExpUI exp={introCharExp} setExp={setIntroCharExp} bubble={introBubble} setBubble={setIntroBubble} bubbleText={introBubbleText} setBubbleText={setIntroBubbleText} />}
+
+                    {/* 導入キャラ個別設定 */}
+                    {useCharacter && (
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <label className="text-xs font-bold text-slate-600 block">🎭 導入キャラクター（個別設定）<HelpTip text="導入スライド専用のキャラクターを設定できます。メインキャラとは別の人物（悩んでいる読者役など）を配置するのに便利です。ブラウザに保存されます。" /></label>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-1">キャラの特徴</label>
+                          <textarea
+                            className="w-full text-sm p-2 border border-slate-200 rounded-lg focus:border-blue-400 outline-none resize-none"
+                            rows={2}
+                            value={introCharDesc}
+                            onChange={(e) => setIntroCharDesc(e.target.value)}
+                            placeholder="例：困っている表情の女性ちびキャラ、悩んでいるポーズ"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-1">キャラ参考画像（任意）</label>
+                          <div
+                            className="border-2 border-dashed border-slate-300 bg-white/50 rounded-lg p-3 text-center cursor-pointer hover:bg-white transition-colors relative overflow-hidden"
+                            onClick={introCharImage ? undefined : (() => {
+                              const input = document.createElement('input');
+                              input.type = 'file'; input.accept = 'image/*';
+                              input.onchange = (e) => { const file = e.target.files[0]; if (file) { const r = new FileReader(); r.onloadend = () => setIntroCharImage(r.result); r.readAsDataURL(file); } };
+                              input.click();
+                            })}
+                          >
+                            {introCharImage ? (
+                              <div className="relative h-24 flex items-center justify-center">
+                                <img src={introCharImage} alt="Intro Char" className="h-full object-contain rounded" />
+                                <div className="absolute top-1 right-1 flex gap-1">
+                                  <button onClick={(e) => { e.stopPropagation(); const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.onchange = (ev) => { const file = ev.target.files[0]; if (file) { const r = new FileReader(); r.onloadend = () => setIntroCharImage(r.result); r.readAsDataURL(file); } }; input.click(); }} className="bg-slate-600 text-white p-1 rounded-full shadow-md hover:bg-slate-700"><Upload className="w-3 h-3" /></button>
+                                  <button onClick={(e) => { e.stopPropagation(); setIntroCharImage(null); }} className="bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600"><X className="w-3 h-3" /></button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="py-2">
+                                <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1" />
+                                <p className="text-[10px] text-slate-500 font-bold">導入用キャラ画像をアップロード</p>
+                                <p className="text-[10px] text-slate-400">未設定の場合はメインキャラが使われます</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 text-[10px] text-slate-500">
+                          <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <div>ブラウザに保存されます。メインキャラとは別の人物を導入に配置できます。</div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
                       <div className="flex items-center gap-2">
                         <button onClick={() => setIntroSwipe(!introSwipe)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${introSwipe ? 'bg-blue-50 text-blue-700 border border-blue-300' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
@@ -2398,33 +2503,38 @@ export default function InstaFeedMaker() {
                           const titleProps = getTitleH1Style();
                           const frameColor = useCustomMainColor ? validMainColor : '#64748b';
 
-                          // フレーム＋タイトル レイアウト（フレームはbackground側で描画）
+                          // デコ＋タイトル レイアウト（装飾背景＋縁取りタイトル）
                           if (coverLayout === 'frame_title') {
                             return (
-                              <div className="w-full h-full relative flex flex-col items-center justify-between z-30" style={{ padding: '36px 16px 36px 16px' }}>
-                                <div className="flex flex-col items-center pt-1">
+                              <div className="w-full h-full relative flex flex-col items-center justify-between z-30" style={{ padding: '20px 16px 12px 16px' }}>
+                                {/* 上部: サブタイトル枠 */}
+                                <div className="flex flex-col items-center pt-2">
                                   {coverSubtitle && (
-                                    <div className="px-5 py-1.5 text-sm font-extrabold inline-block" style={{ border: `2.5px solid ${frameColor}`, borderRadius: '4px', color: frameColor }}>
+                                    <div className="px-4 py-1 text-xs font-bold inline-block rounded-full" style={{ border: `2px solid ${frameColor}`, color: frameColor }}>
                                       {coverSubtitle}
                                     </div>
                                   )}
                                 </div>
+                                {/* 中央: 縁取りタイトル */}
                                 <div className="flex flex-col items-center flex-1 justify-center px-2">
-                                  <h1 className="text-3xl font-black leading-tight text-center whitespace-pre-wrap drop-shadow-sm" style={{ color: frameColor }}>{coverTitle}</h1>
+                                  <h1 className="text-3xl font-black leading-tight text-center whitespace-pre-wrap" style={{ color: '#4988C4', WebkitTextStroke: '1.5px #0F2854', paintOrder: 'stroke fill' }}>{coverTitle}</h1>
                                 </div>
+                                {/* 下部: キャラ左 + Swipe右 */}
                                 <div className="w-full flex items-end justify-between px-1">
-                                  <div>
-                                    {eyeCatchBadge === 'label' && <div className="text-white text-[8px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: frameColor }}>保存版</div>}
+                                  <div className="flex items-end gap-2">
+                                    {characterSource === 'upload' && uploadedImage ? (
+                                      <img src={uploadedImage} alt="Char" className="h-14 object-contain drop-shadow-lg" />
+                                    ) : (
+                                      <div className="w-10 h-14 bg-slate-100 rounded-lg flex items-center justify-center">
+                                        <User className="w-5 h-5 text-slate-400" />
+                                      </div>
+                                    )}
                                   </div>
-                                  {characterSource === 'upload' && uploadedImage ? (
-                                    <img src={uploadedImage} alt="Char" className="h-16 object-contain drop-shadow-lg" />
-                                  ) : (
-                                    <div className="w-12 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                                      <User className="w-6 h-6 text-slate-400" />
-                                    </div>
-                                  )}
+                                  <div className="flex flex-col items-end gap-1">
+                                    {eyeCatchBadge === 'label' && <div className="text-white text-[7px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: frameColor }}>保存版</div>}
+                                    <span className="text-slate-400 text-[9px] font-bold flex items-center gap-0.5">Swipe <span className="text-[7px]">▸▸</span></span>
+                                  </div>
                                 </div>
-                                <span className="absolute bottom-2.5 right-3 text-white/90 text-[10px] font-bold flex items-center gap-1 z-30">Swipe <span className="text-[8px] tracking-tight">▸▸</span></span>
                               </div>
                             );
                           }
@@ -2525,6 +2635,69 @@ export default function InstaFeedMaker() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'caption' && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> キャプション生成
+                </h2>
+                <button
+                  onClick={handleGenerateCaption}
+                  disabled={captionGenerating}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {captionGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                  ) : (
+                    <><Wand2 className="w-3.5 h-3.5" /> キャプションを生成</>
+                  )}
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 mb-4">
+                投稿の内容（タイトル・導入・スライド・まとめ）をもとに、約1000文字のキャプション文を自動生成します。
+              </p>
+
+              {captionText ? (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <textarea
+                      value={captionText}
+                      onChange={(e) => setCaptionText(e.target.value)}
+                      className="w-full h-[60vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-slate-400">
+                      {captionText.length}文字
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCopyCaption}
+                      className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${captionCopied ? 'bg-blue-50 text-blue-600 border border-blue-300' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
+                    >
+                      {captionCopied ? <><Check className="w-4 h-4" /> コピーしました！</> : <><Copy className="w-4 h-4" /> キャプションをコピー</>}
+                    </button>
+                    <button
+                      onClick={handleGenerateCaption}
+                      disabled={captionGenerating}
+                      className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${captionGenerating ? 'animate-spin' : ''}`} /> 再生成
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
+                  <FileText className="w-12 h-12 mb-3" />
+                  <p className="text-sm font-bold">キャプションを生成してください</p>
+                  <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
+                </div>
+              )}
             </div>
           </div>
         )}
