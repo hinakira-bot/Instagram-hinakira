@@ -839,9 +839,9 @@ export default function InstaFeedMaker() {
       p += `Structure: Top heading band → Upper visual → Lower text (no box). `;
       p += `HEADING BAND: "${data.title}" (in Japanese) in white text on the colored band. Heading style: ${headingObj.prompt} `;
       p += `UPPER AREA — VISUAL (prioritize clarity and understanding): Create a clear, easy-to-understand DIAGRAM or INFOGRAPHIC explaining (${data.imageDesc}). Use flowcharts, comparison charts, step-by-step diagrams, icons with labels, or structured visual explanations. **IMPORTANT: Keep text inside diagrams to an ABSOLUTE MINIMUM — use only short keywords, labels, or numbers (1-3 words max per label). AVOID long sentences or paragraphs inside the diagram. Too much text in generated images causes garbled/corrupted characters. Use icons, arrows, and visual elements instead of text wherever possible.** If a diagram is difficult for the topic, use recognizable imagery such as: actual tool/service logos, product images, usage screenshots, or illustrative icons (like "いらすとや" style). The goal is maximum comprehension — the reader should understand the concept at a glance. `;
-      p += `LOWER AREA: Explanation text "${data.text.replace(/\n/g, ' ')}" (in Japanese) placed directly on white background — NO box, NO border, NO frame around the text. `;
+      p += `LOWER AREA: Explanation text "${data.text.replace(/\n/g, ' ')}" (in Japanese) placed directly on white background — NO box, NO border, NO frame around the text. **TEXT RULES**: Keep the explanation text to around 50-60 characters (Japanese). Text font size should be approximately 37px. Use a SINGLE consistent text color across ALL content slides (use dark navy #0F2854 or similar dark color — the SAME color on every content slide). **WRITING TONE**: Write in a warm, friendly, casual tone — like a kind friend chatting and teaching you. Use endings like ～だよ、～なんよね、～かもよ、～てね、～しようね. Be approachable and fun, NOT formal or stiff. `;
       p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner. `;
-      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins. NO inner boxes or frames. Match the design of slide 3 exactly. `;
+      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins, same text color, same text size (~37px). NO inner boxes or frames. Match the design of slide 3 exactly. `;
     } else if (type === 'summary') {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
@@ -851,7 +851,7 @@ export default function InstaFeedMaker() {
       if (boxObj.id !== 'none') {
         p += `Content Box: ${boxObj.prompt} `;
       }
-      p += `CONTENT: Bullet point list (${summaryItems.length} items, matching the number of content slides) in Japanese. Each item must be SHORT and concise (max 15 characters). Items: ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all items clearly as a numbered or bulleted list. `;
+      p += `CONTENT: Bullet point list (${summaryItems.length} items, matching the number of content slides) in Japanese. Each item must be SHORT and concise (max 15 characters). Items: ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all items clearly as a numbered or bulleted list. **WRITING TONE**: Write as if warmly talking to the reader — friendly, approachable, like a kind friend summarizing key points. Use casual Japanese endings like ～だよ、～なんよね、～てね、～しようね. NOT formal/stiff. `;
       p += `FOOTER: "📌 ブックマークがおすすめ！" text in readable size at the bottom to encourage saving/bookmarking. `;
       p += `Match the same layout structure (heading band, box style, background, margins) as content slides. `;
     }
