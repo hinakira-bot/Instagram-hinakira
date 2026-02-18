@@ -573,7 +573,7 @@ export default function InstaFeedMaker() {
   }, [mainSlides, summaryAutoSync]);
   const [summaryCharExp, setSummaryCharExp] = useState('幸せそうな笑顔でサムズアップ');
   const [summaryBubble, setSummaryBubble] = useState(true);
-  const [summaryBubbleText, setSummaryBubbleText] = useState('やってみてね！');
+  const [summaryBubbleText, setSummaryBubbleText] = useState('毎日投稿するので、AIを学びたい方はフォローしといてね！');
   const [summaryRefImage, setSummaryRefImage] = useState(() => { try { return localStorage.getItem('default_summary_ref') || null; } catch { return null; } });
   useEffect(() => {
     compressAndStoreRef('default_summary_ref', summaryRefImage);
@@ -782,8 +782,13 @@ export default function InstaFeedMaker() {
             p += `Character: (${desc}) with (${expression}). `;
           }
         }
-        p += `Shot Type: ${effectiveSizePrompt}. `;
-        p += `Position: Character is positioned at the ${posString} of the layout. `;
+        if (type === 'main') {
+          p += `Shot Type: FULL BODY (head to feet) but SMALL size — the character should be compact and tucked into the bottom-left corner, NOT overlapping the text area. `;
+          p += `Position: Character is positioned at the BOTTOM-LEFT corner of the layout, small enough to not interfere with text. `;
+        } else {
+          p += `Shot Type: ${effectiveSizePrompt}. `;
+          p += `Position: Character is positioned at the ${posString} of the layout. `;
+        }
       }
 
       if (bubble && bubbleText) {
@@ -845,25 +850,23 @@ export default function InstaFeedMaker() {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Content Slide. `;
-      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. NO inner borders, boxes, or frames inside the slide — only the top heading band. The layout is flat and clean with NO double framing. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the upper area (~40-50%) contains a visual. The lower area (~30-40%) contains the explanation text directly on the white background (NO surrounding box or border). Bottom-right has "スワイプ ▸▸" footer text. `;
-      p += `Structure: Top heading band → Upper visual → Lower text (no box). `;
+      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. NO inner borders, boxes, or frames inside the slide — only the top heading band. The layout is flat and clean with NO double framing. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the upper area (~35-40%) contains a visual (slightly compact, leaving more room for text). The lower area (~35-40%) contains the explanation text directly on the white background (NO surrounding box or border). A SMALL full-body character is at the BOTTOM-LEFT corner, compact enough to NOT overlap or interfere with the text. Bottom-right has "スワイプ ▸▸" footer text. `;
+      p += `Structure: Top heading band → Upper visual (slightly smaller) → Lower text (no box) → Small character bottom-left. `;
       p += `HEADING BAND: "${data.title}" (in Japanese) in white text on the colored band. Heading style: ${headingObj.prompt} `;
       p += `UPPER AREA — VISUAL (prioritize clarity and understanding): Create a clear, easy-to-understand DIAGRAM or INFOGRAPHIC explaining (${data.imageDesc}). Use flowcharts, comparison charts, step-by-step diagrams, icons with labels, or structured visual explanations. **IMPORTANT: Keep text inside diagrams to an ABSOLUTE MINIMUM — use only short keywords, labels, or numbers (1-3 words max per label). AVOID long sentences or paragraphs inside the diagram. Too much text in generated images causes garbled/corrupted characters. Use icons, arrows, and visual elements instead of text wherever possible.** If a diagram is difficult for the topic, use recognizable imagery such as: actual tool/service logos, product images, usage screenshots, or illustrative icons (like "いらすとや" style). The goal is maximum comprehension — the reader should understand the concept at a glance. `;
-      p += `LOWER AREA: Render the following text EXACTLY as provided (do NOT rewrite or change the wording): "${data.text.replace(/\n/g, ' ')}" (in Japanese). Place directly on white background — NO box, NO border, NO frame around the text. **TEXT RULES**: Text font size should be approximately 35px. Use a SINGLE consistent text color across ALL content slides (use dark navy #0F2854 or similar dark color — the SAME color on every content slide). `;
+      p += `LOWER AREA: Render the following text EXACTLY as provided (do NOT rewrite or change the wording): "${data.text.replace(/\n/g, ' ')}" (in Japanese). Place directly on white background — NO box, NO border, NO frame around the text. **LEFT-ALIGNED text**. **TEXT RULES**: Text font size should be small and modest (approximately 24-26px) — keep it compact since content slides have more text. Each sentence on its OWN separate line with clear paragraph spacing between them. Use GENEROUS whitespace around the text for a clean, balanced, airy layout. Use a SINGLE consistent text color across ALL content slides (use dark navy #0F2854 or similar dark color — the SAME color on every content slide). `;
       p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner. `;
-      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins, same text color, same text size (~35px). NO inner boxes or frames. Match the design of slide 3 exactly. `;
+      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins, same text color, same text size (~24-26px). NO inner boxes or frames. Match the design of slide 3 exactly. `;
     } else if (type === 'summary') {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Summary/Conclusion Slide. `;
-      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. At the very top is a colored heading band (full width) in the main theme color. Below the heading band is the summary content. The bottom has "📌 ブックマークがおすすめ！" footer text. `;
+      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the layout from top to bottom: (1) Bullet list inside a bordered box, (2) Character with speech bubble, (3) Footer. `;
       p += `HEADING: "まとめ" (in Japanese). Heading style: ${headingObj.prompt} Same heading band as content slides. `;
-      if (boxObj.id !== 'none') {
-        p += `Content Box: ${boxObj.prompt} `;
-      }
-      p += `CONTENT: Render the following bullet items EXACTLY as provided (do NOT rewrite): ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all ${summaryItems.length} items clearly as a numbered or bulleted list. Each item should be short and concise. Additionally, include a short one-point comment or encouragement text outside the bullet list (e.g. below or above) — THIS part should be in warm, friendly, casual tone like a kind friend (～だよ、～てね、～しようね). `;
-      p += `FOOTER: "📌 ブックマークがおすすめ！" text in readable size at the bottom to encourage saving/bookmarking. `;
-      p += `Match the same layout structure (heading band, box style, background, margins) as content slides. `;
+      p += `BULLET LIST BOX: Render the following bullet items EXACTLY as provided (do NOT rewrite): ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all ${summaryItems.length} items clearly as a numbered or bulleted list. Place ONLY the bullet list inside a BORDERED BOX/FRAME (rounded rectangle with a subtle border in the theme color). Each item should be short and concise. Nothing else goes inside this box. `;
+      p += `CHARACTER & SPEECH BUBBLE: Below the bordered box, place the CHARACTER at the BOTTOM-LEFT (full body, small, compact). To the RIGHT of the character, place a SPEECH BUBBLE containing: "${summaryBubbleText}". The character and speech bubble are OUTSIDE the bordered box. `;
+      p += `FOOTER: "📌 ブックマークがおすすめ！" text at the BOTTOM-RIGHT corner in readable size. `;
+      p += `Match the heading band style as content slides. `;
     }
 
     if (slideBg.type === 'theme') {
@@ -1795,8 +1798,8 @@ export default function InstaFeedMaker() {
                       </div>
                       <div>
                         <label className="text-xs font-bold text-slate-400 block mb-1">メインタイトル<HelpTip text="表紙の中央に大きく表示されるタイトルです。改行で複数行にできます。インパクトのある短い文が効果的。" /></label>
-                        <textarea className="w-full text-lg font-bold p-3 border-2 border-slate-100 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none resize-none" rows={3} value={coverTitle} onChange={(e) => { const raw = e.target.value; const chars = raw.replace(/\n/g, ''); if (chars.length <= 25) setCoverTitle(raw); }} maxLength={30} />
-                        <span className={`text-[10px] ${coverTitle.replace(/\n/g, '').length > 22 ? 'text-red-400' : 'text-slate-400'}`}>{coverTitle.replace(/\n/g, '').length}/25文字</span>
+                        <textarea className="w-full text-lg font-bold p-3 border-2 border-slate-100 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none resize-none" rows={3} value={coverTitle} onChange={(e) => { const raw = e.target.value; const chars = raw.replace(/\n/g, ''); const currentChars = coverTitle.replace(/\n/g, '').length; if (chars.length <= 25 || chars.length <= currentChars) setCoverTitle(raw); }} />
+                        <span className={`text-[10px] ${coverTitle.replace(/\n/g, '').length > 25 ? 'text-red-400' : coverTitle.replace(/\n/g, '').length > 22 ? 'text-orange-400' : 'text-slate-400'}`}>{coverTitle.replace(/\n/g, '').length}/25文字</span>
                       </div>
                     </div>
 
