@@ -769,10 +769,18 @@ export default function InstaFeedMaker() {
         if (hasCharImage) {
           p += `**CRITICAL - EXACT CHARACTER MATCH**: I have uploaded a reference image of the MAIN character. You MUST reproduce this EXACT same character in this slide. The character's face, hairstyle, clothing, art style, and proportions MUST be identical to the uploaded reference. Do NOT create a different character. `;
           p += `Character Description: ${desc}. `;
-          p += `Pose/Expression: ${expression}. `;
+          if (type === 'main') {
+            p += `Pose/Expression: Choose an expression and pose that MATCHES the slide content — default is a bright smile or cheerful pose (e.g. thumbs up, pointing, waving). Adapt naturally: explaining something → friendly teaching pose, warning → slightly concerned but kind face, tips → excited/encouraging. Always positive and engaging. `;
+          } else {
+            p += `Pose/Expression: ${expression}. `;
+          }
         } else {
           p += `**MAIN CHARACTER (MUST BE CONSISTENT)**: Use the EXACT same character across all slides (cover, content, summary). `;
-          p += `Character: (${desc}) with (${expression}). `;
+          if (type === 'main') {
+            p += `Character: (${desc}). Pose/Expression: Choose an expression and pose that MATCHES the slide content — default is a bright smile or cheerful pose. Adapt naturally to the topic being explained. Always positive and engaging. `;
+          } else {
+            p += `Character: (${desc}) with (${expression}). `;
+          }
         }
         p += `Shot Type: ${effectiveSizePrompt}. `;
         p += `Position: Character is positioned at the ${posString} of the layout. `;
@@ -851,7 +859,7 @@ export default function InstaFeedMaker() {
       if (boxObj.id !== 'none') {
         p += `Content Box: ${boxObj.prompt} `;
       }
-      p += `CONTENT: Bullet point list (${summaryItems.length} items, matching the number of content slides) in Japanese. Each item must be SHORT and concise (max 15 characters). Items: ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all items clearly as a numbered or bulleted list. **WRITING TONE**: Write as if warmly talking to the reader — friendly, approachable, like a kind friend summarizing key points. Use casual Japanese endings like ～だよ、～なんよね、～てね、～しようね. NOT formal/stiff. `;
+      p += `CONTENT: Bullet point list (${summaryItems.length} items, matching the number of content slides) in Japanese. Each bullet item must be SHORT, concise, and factual (max 15 characters) — use plain, simple noun-phrase style (NOT casual speech). Items: ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all items clearly as a numbered or bulleted list. Additionally, include a short one-point comment or encouragement text outside the bullet list (e.g. below or above) — THIS part should be in warm, friendly, casual tone like a kind friend (～だよ、～てね、～しようね). `;
       p += `FOOTER: "📌 ブックマークがおすすめ！" text in readable size at the bottom to encourage saving/bookmarking. `;
       p += `Match the same layout structure (heading band, box style, background, margins) as content slides. `;
     }
