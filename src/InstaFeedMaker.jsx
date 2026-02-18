@@ -551,11 +551,15 @@ export default function InstaFeedMaker() {
     },
   ]);
 
-  // コンテンツ共通デフォルト参考画像（1枚で全コンテンツに適用）
+  // コンテンツ共通デフォルト参考画像（2枚で全コンテンツに適用）
   const [contentDefaultRef, setContentDefaultRef] = useState(() => { try { return localStorage.getItem('default_content_ref') || null; } catch { return null; } });
+  const [contentDefaultRef2, setContentDefaultRef2] = useState(() => { try { return localStorage.getItem('default_content_ref2') || null; } catch { return null; } });
   useEffect(() => {
     compressAndStoreRef('default_content_ref', contentDefaultRef);
   }, [contentDefaultRef, compressAndStoreRef]);
+  useEffect(() => {
+    compressAndStoreRef('default_content_ref2', contentDefaultRef2);
+  }, [contentDefaultRef2, compressAndStoreRef]);
 
   const [summaryItems, setSummaryItems] = useState(() =>
     ['AIツールを選ぶ', 'プロンプトのコツ', '実践で使いこなす']
@@ -797,13 +801,19 @@ export default function InstaFeedMaker() {
     }
 
     let sectionRefImage = null;
+    let sectionRefImages = [];
     if (type === 'cover') sectionRefImage = coverRefImage;
     else if (type === 'intro') sectionRefImage = introRefImage;
     else if (type === 'summary') sectionRefImage = summaryRefImage;
-    else if (type === 'main' && data) sectionRefImage = data.refImage;
+    else if (type === 'main' && data) {
+      sectionRefImage = data.refImage;
+      // コンテンツはデフォルト参考画像2枚も追加
+      if (contentDefaultRef) sectionRefImages.push(contentDefaultRef);
+      if (contentDefaultRef2) sectionRefImages.push(contentDefaultRef2);
+    }
 
-    if (sectionRefImage) {
-      p += `**STYLE REFERENCE**: I have uploaded a style reference image. Please match the overall visual style, color tone, layout composition, and atmosphere of the reference image as closely as possible. `;
+    if (sectionRefImage || sectionRefImages.length > 0) {
+      p += `**STYLE REFERENCE**: I have uploaded style reference image(s). Please match the overall visual style, color tone, layout composition, and atmosphere of the reference images as closely as possible. `;
     }
 
     if (type === 'cover') {
@@ -850,13 +860,14 @@ export default function InstaFeedMaker() {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Content Slide. `;
-      p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. NO inner borders, boxes, or frames inside the slide — only the top heading band. The layout is flat and clean with NO double framing. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the upper area (~35-40%) contains a visual (slightly compact, leaving more room for text). The lower area (~35-40%) contains the explanation text directly on the white background (NO surrounding box or border). A SMALL full-body character is at the BOTTOM-LEFT corner, compact enough to NOT overlap or interfere with the text. Bottom-right has "スワイプ ▸▸" footer text. `;
-      p += `Structure: Top heading band → Upper visual (slightly smaller) → Lower text (no box) → Small character bottom-left. `;
-      p += `HEADING BAND: "${data.title}" (in Japanese) in white text on the colored band. Heading style: ${headingObj.prompt} `;
-      p += `UPPER AREA — VISUAL (prioritize clarity and understanding): Create a clear, easy-to-understand DIAGRAM or INFOGRAPHIC explaining (${data.imageDesc}). Use flowcharts, comparison charts, step-by-step diagrams, icons with labels, or structured visual explanations. **IMPORTANT: Keep text inside diagrams to an ABSOLUTE MINIMUM — use only short keywords, labels, or numbers (1-3 words max per label). AVOID long sentences or paragraphs inside the diagram. Too much text in generated images causes garbled/corrupted characters. Use icons, arrows, and visual elements instead of text wherever possible.** If a diagram is difficult for the topic, use recognizable imagery such as: actual tool/service logos, product images, usage screenshots, or illustrative icons (like "いらすとや" style). The goal is maximum comprehension — the reader should understand the concept at a glance. `;
-      p += `LOWER AREA: Render the following text EXACTLY as provided (do NOT rewrite or change the wording): "${data.text.replace(/\n/g, ' ')}" (in Japanese). Place directly on white background — NO box, NO border, NO frame around the text. **LEFT-ALIGNED text**. **TEXT RULES**: Text font size should be small and modest (approximately 24-26px) — keep it compact since content slides have more text. Each sentence on its OWN separate line with clear paragraph spacing between them. Use GENEROUS whitespace around the text for a clean, balanced, airy layout. Use a SINGLE consistent text color across ALL content slides (use dark navy #0F2854 or similar dark color — the SAME color on every content slide). `;
-      p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner. `;
-      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same background, same margins, same text color, same text size (~24-26px). NO inner boxes or frames. Match the design of slide 3 exactly. `;
+      p += `**SLIDE STRUCTURE**: The slide has TWO main zones stacked vertically: `;
+      p += `1) UPPER ZONE (~55-60% of the slide): Contains the heading band at the very top, and below it a large IMAGE/VISUAL area that fills most of this zone. The background of this zone can be the theme color or a complementary color. `;
+      p += `2) LOWER ZONE (~40-45% of the slide): A clean WHITE PANEL/BOX area at the bottom of the slide — like a white card or white rectangle with rounded top corners overlapping slightly into the image area. This white panel contains the explanation text and a small character. `;
+      p += `HEADING BAND: "${data.title}" (in Japanese) in white text on a colored band at the very top. Heading style: ${headingObj.prompt} `;
+      p += `UPPER ZONE — IMAGE/VISUAL (prioritize clarity and understanding): Create a clear, easy-to-understand DIAGRAM or INFOGRAPHIC explaining (${data.imageDesc}). Use flowcharts, comparison charts, step-by-step diagrams, icons with labels, or structured visual explanations. **IMPORTANT: Keep text inside diagrams to an ABSOLUTE MINIMUM — use only short keywords, labels, or numbers (1-3 words max per label). AVOID long sentences or paragraphs inside the diagram. Too much text causes garbled characters. Use icons, arrows, and visual elements instead of text wherever possible.** If a diagram is difficult, use recognizable imagery such as: actual tool/service logos, product images, usage screenshots, or illustrative icons. The goal is maximum comprehension at a glance. `;
+      p += `LOWER ZONE — WHITE PANEL: A clean WHITE background panel/card at the bottom. Contains: **LEFT-ALIGNED text**: Render the following text EXACTLY as provided (do NOT rewrite): "${data.text.replace(/\n/g, ' ')}" (in Japanese). **TEXT RULES**: Text font size approximately 24-26px. Each sentence on its OWN separate line with clear paragraph spacing. Use dark navy (#0F2854) text color — SAME color on every content slide. A SMALL full-body character is at the BOTTOM-LEFT of this white panel, compact and NOT overlapping text. `;
+      p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner of the white panel. `;
+      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band, same image zone size, same white panel style, same text color, same text size (~24-26px). Match the design of slide 3 exactly. `;
     } else if (type === 'summary') {
       const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
@@ -960,6 +971,10 @@ export default function InstaFeedMaker() {
     else if (slideType === 'summary') { refImg = summaryRefImage; }
     else if (slideType === 'main' && slideContent) { refImg = slideContent.refImage || contentDefaultRef; }
 
+    // コンテンツの場合は2枚目の参考画像も追加
+    let refImg2 = null;
+    if (slideType === 'main') { refImg2 = contentDefaultRef2; }
+
     // キャラ画像（導入は個別キャラ優先、それ以外はグローバル）
     if (slideType === 'intro' && introCharImage) {
       charImg = introCharImage;
@@ -967,7 +982,7 @@ export default function InstaFeedMaker() {
       charImg = uploadedImage;
     }
 
-    return { charImg, refImg, bgImg: null };
+    return { charImg, refImg, refImg2, bgImg: null };
   };
 
   // --- 表紙プレビュー用ヘルパー ---
@@ -1114,10 +1129,10 @@ export default function InstaFeedMaker() {
 
     try {
       const prompt = generatePrompt(slide.type, slide.content);
-      const { charImg, refImg, bgImg } = getSlideImages(slide.type, slide.content);
+      const { charImg, refImg, refImg2, bgImg } = getSlideImages(slide.type, slide.content);
       let imageUrl;
 
-      const refImages = [charImg, refImg, bgImg].filter(Boolean);
+      const refImages = [charImg, refImg, refImg2, bgImg].filter(Boolean);
       if (refImages.length > 1) {
         imageUrl = await generateImageWithMultipleReferences(apiKey, prompt, refImages);
       } else if (refImages.length === 1) {
@@ -1197,10 +1212,10 @@ export default function InstaFeedMaker() {
 
       try {
         const prompt = generatePrompt(slides[i].type, slides[i].content);
-        const { charImg, refImg, bgImg } = getSlideImages(slides[i].type, slides[i].content);
+        const { charImg, refImg, refImg2, bgImg } = getSlideImages(slides[i].type, slides[i].content);
         let imageUrl;
 
-        const refImages = [charImg, refImg, bgImg].filter(Boolean);
+        const refImages = [charImg, refImg, refImg2, bgImg].filter(Boolean);
         if (refImages.length > 1) {
           imageUrl = await generateImageWithMultipleReferences(apiKey, prompt, refImages);
         } else if (refImages.length === 1) {
@@ -2040,12 +2055,21 @@ export default function InstaFeedMaker() {
                       <h3 className="font-bold text-slate-700 text-lg">メインコンテンツ</h3>
                       <button onClick={addMainSlide} disabled={mainSlides.length >= 7} className="text-xs bg-slate-700 text-white px-3 py-1.5 rounded-full font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center gap-1"><Plus className="w-3 h-3" /> ページ追加</button>
                     </div>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                      <label className="text-xs font-bold text-slate-600 block">📌 コンテンツ共通デフォルト参考画像<HelpTip text="1枚アップすれば全コンテンツスライドに適用されます。個別スライドに参考画像がある場合はそちらが優先されます。ブラウザに保存されます。" /></label>
-                      <RefImageUpload refImage={contentDefaultRef} setRefImage={setContentDefaultRef} />
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <label className="text-xs font-bold text-slate-600 block">📌 コンテンツ共通デフォルト参考画像（2枚まで）<HelpTip text="2枚までアップでき、全コンテンツスライドのテイスト参考として使われます。個別スライドに参考画像がある場合はそちらが優先されます。ブラウザに保存されます。" /></label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block mb-1">参考画像 1</span>
+                          <RefImageUpload refImage={contentDefaultRef} setRefImage={setContentDefaultRef} />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400 block mb-1">参考画像 2</span>
+                          <RefImageUpload refImage={contentDefaultRef2} setRefImage={setContentDefaultRef2} />
+                        </div>
+                      </div>
                       <div className="flex gap-2 text-[10px] text-slate-500">
                         <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <div>1枚で全コンテンツに適用。ブラウザに保存され次回以降自動読込。個別設定で上書き可。</div>
+                        <div>2枚で全コンテンツに適用。テイストの参考として画像生成に使用。ブラウザに保存され次回以降自動読込。</div>
                       </div>
                     </div>
                     <div className="space-y-8">
