@@ -504,11 +504,15 @@ export default function InstaFeedMaker() {
   const [coverBubble, setCoverBubble] = useState(false);
   const [coverBubbleText, setCoverBubbleText] = useState('保存必須！');
   const [coverRefImage, setCoverRefImage] = useState(() => { try { return localStorage.getItem('default_cover_ref') || null; } catch { return null; } });
+  const [coverRefImage2, setCoverRefImage2] = useState(() => { try { return localStorage.getItem('default_cover_ref2') || null; } catch { return null; } });
 
   // 表紙参考画像をlocalStorageに永続保存
   useEffect(() => {
     compressAndStoreRef('default_cover_ref', coverRefImage);
   }, [coverRefImage, compressAndStoreRef]);
+  useEffect(() => {
+    compressAndStoreRef('default_cover_ref2', coverRefImage2);
+  }, [coverRefImage2, compressAndStoreRef]);
 
   const [introText, setIntroText] = useState('「AIって難しそう...」\n「何から始めればいい？」\n\nそんな悩みを一気に解決！\n初心者でも今日から使える\n実践メソッドを完全公開します\n\n最後まで読めば、あなたも\nAIマスターに！');
   const [introCharExp, setIntroCharExp] = useState('困った顔で悩んでいるポーズ');
@@ -823,8 +827,10 @@ export default function InstaFeedMaker() {
 
     let sectionRefImage = null;
     let sectionRefImages = [];
-    if (type === 'cover') sectionRefImage = coverRefImage;
-    else if (type === 'intro') sectionRefImage = introRefImage;
+    if (type === 'cover') {
+      sectionRefImage = coverRefImage;
+      if (coverRefImage2) sectionRefImages.push(coverRefImage2);
+    } else if (type === 'intro') sectionRefImage = introRefImage;
     else if (type === 'summary') sectionRefImage = summaryRefImage;
     else if (type === 'main' && data) {
       sectionRefImage = data.refImage;
@@ -1020,9 +1026,10 @@ export default function InstaFeedMaker() {
     else if (slideType === 'summary') { refImg = summaryRefImage; }
     else if (slideType === 'main' && slideContent) { refImg = slideContent.refImage || contentDefaultRef; }
 
-    // コンテンツの場合は2枚目の参考画像も追加
+    // 表紙・コンテンツの場合は2枚目の参考画像も追加
     let refImg2 = null;
-    if (slideType === 'main') { refImg2 = contentDefaultRef2; }
+    if (slideType === 'cover') { refImg2 = coverRefImage2; }
+    else if (slideType === 'main') { refImg2 = contentDefaultRef2; }
 
     // キャラ画像（導入は個別キャラ優先、それ以外はグローバル）
     if (slideType === 'intro' && introCharImage) {
@@ -1197,7 +1204,7 @@ export default function InstaFeedMaker() {
     } finally {
       setGeneratingIndex(null);
     }
-  }, [apiKey, coverTitle, introText, mainSlides, summaryItems, characterSource, uploadedImage, coverRefImage, introRefImage, summaryRefImage, generatePrompt]);
+  }, [apiKey, coverTitle, introText, mainSlides, summaryItems, characterSource, uploadedImage, coverRefImage, coverRefImage2, introRefImage, summaryRefImage, generatePrompt]);
 
   // --- キャプション生成 ---
   const handleGenerateCaption = useCallback(async () => {
@@ -1470,7 +1477,7 @@ export default function InstaFeedMaker() {
       }
     }
     setBatchGenerating(false);
-  }, [apiKey, coverTitle, introText, mainSlides, summaryItems, characterSource, uploadedImage, coverRefImage, introRefImage, summaryRefImage, generatedImages, generatePrompt]);
+  }, [apiKey, coverTitle, introText, mainSlides, summaryItems, characterSource, uploadedImage, coverRefImage, coverRefImage2, introRefImage, summaryRefImage, generatedImages, generatePrompt]);
 
   const handleCancelBatch = () => {
     batchCancelRef.current = true;
@@ -2192,10 +2199,13 @@ export default function InstaFeedMaker() {
 
                     {useCharacter && <SlideCharExpUI exp={coverCharExp} setExp={setCoverCharExp} bubble={coverBubble} setBubble={setCoverBubble} bubbleText={coverBubbleText} setBubbleText={setCoverBubbleText} />}
                     <div className="space-y-2">
-                      <RefImageUpload refImage={coverRefImage} setRefImage={setCoverRefImage} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <MiniImageUpload label="参考画像①" icon={ImageIcon} image={coverRefImage} setImage={setCoverRefImage} accentColor="blue" />
+                        <MiniImageUpload label="参考画像②" icon={ImageIcon} image={coverRefImage2} setImage={setCoverRefImage2} accentColor="blue" />
+                      </div>
                       <div className="flex gap-2 text-[10px] text-slate-500 bg-slate-50 p-2 rounded border border-slate-200">
                         <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        <div>表紙の参考画像はブラウザに保存されます。一度アップすれば次回以降は自動で読み込まれ、毎回同じデザインテイストで生成できます。</div>
+                        <div>表紙の参考画像はブラウザに保存されます。2枚まで設定でき、色味やレイアウトの参考にされます。</div>
                       </div>
                     </div>
                   </div>
