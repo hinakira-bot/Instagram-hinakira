@@ -165,42 +165,36 @@ ${slideSummary}
 /**
  * 文章からインスタ投稿構成を自動生成
  */
-// URL記事取得（URL Context）
+// URL記事取得（Google Search Grounding経由）
 export async function fetchArticleFromUrl(apiKey, url) {
   const ai = new GoogleGenAI({ apiKey });
 
-  const systemPrompt = `以下のURLの記事内容を読み取り、記事の本文テキストをそのまま抽出してください。
+  const systemPrompt = `以下のURLのWebページの記事内容を、Google検索を使って取得し、本文テキストを抽出してください。
+
+URL: ${url}
 
 【ルール】
-- 記事のタイトル、本文、見出しを含めてテキストとして出力する
-- ナビゲーション、広告、サイドバー、フッターなどは除外する
-- HTML タグは除外し、プレーンテキストで出力する
+- 上記URLの記事のタイトル、本文、見出しを含めてテキストとして出力する
 - 記事の構造（見出し、段落）がわかるように改行を保持する
-- 前置きや説明は不要。記事テキストのみを出力する
-
-URL: ${url}`;
+- ナビゲーション、広告、サイドバー、フッターなどは除外する
+- 前置きや説明は不要。記事テキストのみを出力する`;
 
   try {
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: systemPrompt,
       config: {
-        tools: [{ urlContext: {} }],
+        tools: [{ googleSearch: {} }],
         thinkingConfig: {
           thinkingLevel: "low",
         },
       }
     });
 
-    console.log("fetchArticleFromUrl response:", JSON.stringify(response, null, 2));
-
-    // response.text が使えればそれを使う
     let text = response.text;
 
-    // 使えない場合は candidates から探す
     if (!text) {
       const parts = response.candidates?.[0]?.content?.parts || [];
-      // thinking パートを除いてテキストパートを取得
       for (const part of parts) {
         if (part.text && !part.thought) {
           text = part.text;
