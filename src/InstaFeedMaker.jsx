@@ -9,7 +9,7 @@ import {
   Settings, Download, Loader2, AlertCircle, Wand2, Eye, EyeOff, RefreshCw,
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -593,6 +593,12 @@ export default function InstaFeedMaker() {
   const [captionText, setCaptionText] = useState('');
   const [captionGenerating, setCaptionGenerating] = useState(false);
   const [captionCopied, setCaptionCopied] = useState(false);
+
+  // --- Threads投稿（ツリー投稿）生成 ---
+  const [threadsPosts, setThreadsPosts] = useState([]);
+  const [threadsGenerating, setThreadsGenerating] = useState(false);
+  const [threadsCopiedIndex, setThreadsCopiedIndex] = useState(null);
+  const [threadsRegeneratingIndex, setThreadsRegeneratingIndex] = useState(null);
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
@@ -1179,6 +1185,76 @@ export default function InstaFeedMaker() {
       setTimeout(() => setCaptionCopied(false), 2000);
     });
   }, [captionText]);
+
+  // --- Threads投稿生成 ---
+  const handleGenerateThreads = useCallback(async () => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    setThreadsGenerating(true);
+    try {
+      const posts = await generateThreadsPosts(apiKey, {
+        coverTitle: coverTitle.replace(/\n/g, ' '),
+        coverSubtitle,
+        introText,
+        mainSlides,
+        summaryItems
+      });
+      setThreadsPosts(posts);
+    } catch (e) {
+      alert('Threads投稿生成エラー: ' + e.message);
+    } finally {
+      setThreadsGenerating(false);
+    }
+  }, [apiKey, coverTitle, coverSubtitle, introText, mainSlides, summaryItems]);
+
+  const handleRegenerateThreadsPost = useCallback(async (index) => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    setThreadsRegeneratingIndex(index);
+    try {
+      const newPost = await regenerateThreadsPost(apiKey, {
+        allPosts: threadsPosts,
+        postIndex: index,
+        coverTitle: coverTitle.replace(/\n/g, ' '),
+      });
+      setThreadsPosts(prev => {
+        const updated = [...prev];
+        updated[index] = newPost;
+        return updated;
+      });
+    } catch (e) {
+      alert('投稿の再生成エラー: ' + e.message);
+    } finally {
+      setThreadsRegeneratingIndex(null);
+    }
+  }, [apiKey, threadsPosts, coverTitle]);
+
+  const handleCopyThreadsPost = useCallback((index) => {
+    navigator.clipboard.writeText(threadsPosts[index]).then(() => {
+      setThreadsCopiedIndex(index);
+      setTimeout(() => setThreadsCopiedIndex(null), 2000);
+    });
+  }, [threadsPosts]);
+
+  const handleCopyAllThreads = useCallback(() => {
+    const allText = threadsPosts.join('\n\n---POST---\n\n');
+    navigator.clipboard.writeText(allText).then(() => {
+      setThreadsCopiedIndex(-1);
+      setTimeout(() => setThreadsCopiedIndex(null), 2000);
+    });
+  }, [threadsPosts]);
+
+  const handleEditThreadsPost = useCallback((index, newText) => {
+    setThreadsPosts(prev => {
+      const updated = [...prev];
+      updated[index] = newText;
+      return updated;
+    });
+  }, []);
 
   const handleBatchGenerate = useCallback(async () => {
     if (!apiKey) {
@@ -2677,65 +2753,197 @@ export default function InstaFeedMaker() {
         )}
 
         {activeTab === 'caption' && (
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> キャプション生成
-                </h2>
-                <button
-                  onClick={handleGenerateCaption}
-                  disabled={captionGenerating}
-                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {captionGenerating ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
-                  ) : (
-                    <><Wand2 className="w-3.5 h-3.5" /> キャプションを生成</>
-                  )}
-                </button>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-              <p className="text-xs text-slate-400 mb-4">
-                投稿の内容（タイトル・導入・スライド・まとめ）をもとに、約1000文字のキャプション文を自動生成します。
-              </p>
+            {/* LEFT: キャプション */}
+            <div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <FileText className="w-4 h-4" /> キャプション生成
+                  </h2>
+                  <button
+                    onClick={handleGenerateCaption}
+                    disabled={captionGenerating}
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {captionGenerating ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                    ) : (
+                      <><Wand2 className="w-3.5 h-3.5" /> キャプションを生成</>
+                    )}
+                  </button>
+                </div>
 
-              {captionText ? (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <textarea
-                      value={captionText}
-                      onChange={(e) => setCaptionText(e.target.value)}
-                      className="w-full h-[60vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
-                    />
-                    <div className="absolute bottom-3 right-3 text-xs text-slate-400">
-                      {captionText.length}文字
+                <p className="text-xs text-slate-400 mb-4">
+                  投稿の内容（タイトル・導入・スライド・まとめ）をもとに、約1000文字のキャプション文を自動生成します。
+                </p>
+
+                {captionText ? (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <textarea
+                        value={captionText}
+                        onChange={(e) => setCaptionText(e.target.value)}
+                        className="w-full h-[55vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                      />
+                      <div className="absolute bottom-3 right-3 text-xs text-slate-400">
+                        {captionText.length}文字
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleCopyCaption}
+                        className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${captionCopied ? 'bg-blue-50 text-blue-600 border border-blue-300' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
+                      >
+                        {captionCopied ? <><Check className="w-4 h-4" /> コピーしました！</> : <><Copy className="w-4 h-4" /> キャプションをコピー</>}
+                      </button>
+                      <button
+                        onClick={handleGenerateCaption}
+                        disabled={captionGenerating}
+                        className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${captionGenerating ? 'animate-spin' : ''}`} /> 再生成
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleCopyCaption}
-                      className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${captionCopied ? 'bg-blue-50 text-blue-600 border border-blue-300' : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'}`}
-                    >
-                      {captionCopied ? <><Check className="w-4 h-4" /> コピーしました！</> : <><Copy className="w-4 h-4" /> キャプションをコピー</>}
-                    </button>
-                    <button
-                      onClick={handleGenerateCaption}
-                      disabled={captionGenerating}
-                      className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${captionGenerating ? 'animate-spin' : ''}`} /> 再生成
-                    </button>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
+                    <FileText className="w-12 h-12 mb-3" />
+                    <p className="text-sm font-bold">キャプションを生成してください</p>
+                    <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
                   </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
-                  <FileText className="w-12 h-12 mb-3" />
-                  <p className="text-sm font-bold">キャプションを生成してください</p>
-                  <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* RIGHT: Threads投稿（ツリー） */}
+            <div>
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" /> Threads投稿（ツリー）
+                  </h2>
+                  <button
+                    onClick={handleGenerateThreads}
+                    disabled={threadsGenerating}
+                    className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {threadsGenerating ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                    ) : (
+                      <><Wand2 className="w-3.5 h-3.5" /> ツリーを生成</>
+                    )}
+                  </button>
+                </div>
+
+                <p className="text-xs text-slate-400 mb-4">
+                  投稿内容をもとに、4〜7投稿のThreadsツリーを自動生成します。AI初心者〜中級者向け・話し言葉スタイル。
+                </p>
+
+                {threadsPosts.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* 投稿カードリスト */}
+                    <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                      {threadsPosts.map((post, index) => {
+                        const charCount = post.length;
+                        const isFirst = index === 0;
+                        const isLast = index === threadsPosts.length - 1;
+                        const maxChars = isFirst ? 160 : 500;
+                        const warnChars = isFirst ? 130 : 400;
+                        const isOverLimit = charCount > maxChars;
+                        const isNearLimit = charCount > warnChars;
+
+                        return (
+                          <div key={index} className="bg-slate-50 rounded-lg border border-slate-200 p-3">
+                            {/* カードヘッダー */}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="bg-slate-700 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                  {index + 1}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-500">
+                                  {isFirst ? 'フック投稿' : isLast ? '締め・CTA' : '解説投稿'}
+                                </span>
+                              </div>
+                              <span className={`text-[10px] font-bold ${isOverLimit ? 'text-red-500' : isNearLimit ? 'text-amber-500' : 'text-slate-400'}`}>
+                                {charCount}文字{isOverLimit ? ' ⚠ 超過' : ''}
+                              </span>
+                            </div>
+
+                            {/* 編集可能テキストエリア */}
+                            <textarea
+                              value={post}
+                              onChange={(e) => handleEditThreadsPost(index, e.target.value)}
+                              className={`w-full p-2.5 border rounded-md text-xs text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none ${
+                                isOverLimit ? 'border-red-300 bg-red-50/50' : 'border-slate-200 bg-white'
+                              }`}
+                              rows={isFirst ? 3 : 6}
+                            />
+
+                            {/* 個別アクションボタン */}
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <button
+                                onClick={() => handleCopyThreadsPost(index)}
+                                className={`flex-1 py-1.5 rounded-md font-bold text-[10px] transition-all flex items-center justify-center gap-1 ${
+                                  threadsCopiedIndex === index
+                                    ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                                    : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                {threadsCopiedIndex === index
+                                  ? <><Check className="w-3 h-3" /> コピー済</>
+                                  : <><Copy className="w-3 h-3" /> コピー</>
+                                }
+                              </button>
+                              <button
+                                onClick={() => handleRegenerateThreadsPost(index)}
+                                disabled={threadsRegeneratingIndex !== null || threadsGenerating}
+                                className="flex-1 py-1.5 rounded-md font-bold text-[10px] bg-white text-slate-500 border border-slate-200 hover:bg-slate-100 transition-all flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <RefreshCw className={`w-3 h-3 ${threadsRegeneratingIndex === index ? 'animate-spin' : ''}`} />
+                                {threadsRegeneratingIndex === index ? '再生成中...' : '再生成'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* フッターアクションバー */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                      <button
+                        onClick={handleCopyAllThreads}
+                        className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                          threadsCopiedIndex === -1
+                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {threadsCopiedIndex === -1
+                          ? <><Check className="w-4 h-4" /> 全てコピーしました！</>
+                          : <><Copy className="w-4 h-4" /> 全投稿をコピー</>
+                        }
+                      </button>
+                      <button
+                        onClick={handleGenerateThreads}
+                        disabled={threadsGenerating}
+                        className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${threadsGenerating ? 'animate-spin' : ''}`} /> 全再生成
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
+                    <MessageCircle className="w-12 h-12 mb-3" />
+                    <p className="text-sm font-bold">ツリー投稿を生成してください</p>
+                    <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
         )}
       </div>
