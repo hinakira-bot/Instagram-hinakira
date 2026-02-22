@@ -446,6 +446,10 @@ export async function generateBlogArticle(apiKey, { coverTitle, coverSubtitle, i
   const systemPrompt = `あなたはSEOに強いブログ記事を書くプロのWebライターです。
 以下のInstagram投稿内容に基づいて、X（旧Twitter）向けのブログ記事を作成してください。
 
+【重要】まず、投稿内容のテーマに関連する最新情報や詳細情報をGoogle検索でリサーチしてください。
+複数の記事・情報源を調べて、元の投稿内容以上の有益な情報を盛り込んだ記事にしてください。
+検索で得た情報を自然に織り交ぜて、読者にとってより価値の高い記事にすること。
+
 【投稿内容】
 タイトル: ${coverTitle}
 サブタイトル: ${coverSubtitle || ''}
@@ -510,6 +514,7 @@ ${slideSummary}
     model: TEXT_MODEL,
     contents: systemPrompt,
     config: {
+      tools: [{ googleSearch: {} }],
       thinkingConfig: {
         thinkingLevel: "low",
       },
