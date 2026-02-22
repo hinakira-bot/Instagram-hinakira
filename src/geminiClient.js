@@ -235,15 +235,22 @@ export async function fetchArticleFromUrl(apiKey, url) {
     .filter(line => line.length > 0)
     .join('\n');
 
-  if (cleanedText.length < 50) {
-    throw new Error("記事の本文が取得できませんでした。URLを確認してください。");
-  }
-
-  // Step3: Geminiで記事を整形・要約
-  const systemPrompt = `以下はWebページから抽出したテキストです。このテキストから記事の本文部分のみを抽出・整形してください。
+  // Step3: Geminiで整形（テキスト抽出できた場合はそれを使い、できなかった場合は生HTMLを渡す）
+  let geminiInput;
+  if (cleanedText.length >= 50) {
+    geminiInput = `以下はWebページから抽出したテキストです。このテキストから記事の本文部分のみを抽出・整形してください。
 
 【抽出したテキスト（先頭8000文字）】
-${cleanedText.slice(0, 8000)}
+${cleanedText.slice(0, 8000)}`;
+  } else {
+    // DOM解析でテキストが取れなかった場合（SPA等）、生HTMLをGeminiに渡す
+    geminiInput = `以下はWebページのHTMLソースコードです。このHTMLから記事の本文部分を抽出・整形してください。
+
+【HTML（先頭15000文字）】
+${htmlText.slice(0, 15000)}`;
+  }
+
+  const systemPrompt = `${geminiInput}
 
 【ルール】
 - 記事のタイトル、見出し（h2/h3相当）、本文の構造がわかるように整形する
@@ -274,13 +281,14 @@ ${cleanedText.slice(0, 8000)}
     }
 
     if (!text) {
-      // フォールバック: Gemini整形失敗時はクリーンテキストをそのまま返す
-      return cleanedText.slice(0, 5000);
+      if (cleanedText.length >= 50) return cleanedText.slice(0, 5000);
+      throw new Error("記事の本文が取得できませんでした。URLを確認してください。");
     }
     return text.trim();
   } catch (e) {
-    console.warn("Gemini整形失敗、生テキストを返します:", e.message);
-    return cleanedText.slice(0, 5000);
+    if (cleanedText.length >= 50) return cleanedText.slice(0, 5000);
+    console.error("fetchArticleFromUrl error:", e);
+    throw new Error("URL記事取得エラー: " + (e.message || "不明なエラーが発生しました"));
   }
 }
 
