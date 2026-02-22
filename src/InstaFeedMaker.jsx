@@ -1299,25 +1299,46 @@ export default function InstaFeedMaker() {
     });
   }, []);
 
-  // --- ブログ記事生成ハンドラー ---
+  // --- ブログ記事（X記事 + note記事）同時生成ハンドラー ---
   const handleGenerateBlog = useCallback(async () => {
     if (!apiKey) {
       alert('APIキーを設定してください');
       return;
     }
     setBlogGenerating(true);
+    setNoteGenerating(true);
     try {
-      const result = await generateBlogArticle(apiKey, {
+      // まずX記事を生成
+      const blogResult = await generateBlogArticle(apiKey, {
         coverTitle: coverTitle.replace(/\n/g, ' '),
         coverSubtitle,
         introText,
         mainSlides,
         summaryItems
       });
-      setBlogTitle(result.title);
-      setBlogBody(result.body);
+      setBlogTitle(blogResult.title);
+      setBlogBody(blogResult.body);
+
+      // X記事のbodyを使ってnote記事を生成
+      try {
+        const noteResult = await generateNoteArticle(apiKey, {
+          coverTitle: coverTitle.replace(/\n/g, ' '),
+          coverSubtitle,
+          introText,
+          mainSlides,
+          summaryItems,
+          xArticleBody: blogResult.body
+        });
+        setNoteTitle(noteResult.title);
+        setNoteBody(noteResult.body);
+      } catch (e) {
+        alert('note記事生成エラー: ' + e.message);
+      } finally {
+        setNoteGenerating(false);
+      }
     } catch (e) {
       alert('ブログ記事生成エラー: ' + e.message);
+      setNoteGenerating(false);
     } finally {
       setBlogGenerating(false);
     }
@@ -1559,7 +1580,6 @@ export default function InstaFeedMaker() {
               <button onClick={() => setActiveTab('preview')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'preview' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><MonitorPlay className="w-3 h-3" /> 出力</button>
               <button onClick={() => setActiveTab('caption')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'caption' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><FileText className="w-3 h-3" /> キャプション</button>
               <button onClick={() => setActiveTab('blog')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'blog' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><BookOpenText className="w-3 h-3" /> ブログ</button>
-              <button onClick={() => setActiveTab('note')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'note' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><StickyNote className="w-3 h-3" /> note</button>
             </div>
             <button
               onClick={() => { setApiKeyInput(apiKey); setShowSettings(true); }}
@@ -3123,273 +3143,261 @@ export default function InstaFeedMaker() {
         )}
 
         {activeTab === 'blog' && (
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-6">
 
             {/* ヘッダーカード */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <BookOpenText className="w-4 h-4" /> X ブログ記事
+                  <BookOpenText className="w-4 h-4" /> ブログ記事生成
                 </h2>
                 <button
                   onClick={handleGenerateBlog}
-                  disabled={blogGenerating}
+                  disabled={blogGenerating || noteGenerating}
                   className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {blogGenerating ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                  {(blogGenerating || noteGenerating) ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {blogGenerating ? 'X記事 生成中...' : 'note記事 生成中...'}</>
                   ) : (
-                    <><Wand2 className="w-3.5 h-3.5" /> ブログ記事を生成</>
+                    <><Wand2 className="w-3.5 h-3.5" /> 記事を生成</>
                   )}
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                投稿内容をもとに、2000〜3000文字のSEO対応ブログ記事を自動生成します。話し言葉・フレンドリーな文体で出力します。
+                投稿内容をもとに、X記事（2000〜3000文字）とnote記事（3000〜4000文字）を同時に自動生成します。
               </p>
             </div>
 
-            {(blogTitle || blogBody) ? (
-              <>
-                {/* タイトルカード */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5" /> タイトル
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400">{blogTitle.length}文字</span>
-                      <button
-                        onClick={handleCopyBlogTitle}
-                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
-                          blogCopiedTarget === 'title'
-                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {blogCopiedTarget === 'title'
-                          ? <><Check className="w-3 h-3" /> コピー済</>
-                          : <><Copy className="w-3 h-3" /> コピー</>
-                        }
-                      </button>
+            {/* 2カラムグリッド: 左=X記事、右=note記事 */}
+            {(blogTitle || blogBody || noteTitle || noteBody) ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* === 左カラム: X記事 === */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 px-1">
+                    <BookOpenText className="w-3.5 h-3.5" /> X 記事（2000〜3000文字）
+                  </h3>
+
+                  {blogGenerating ? (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                      <div className="flex flex-col items-center justify-center h-[30vh] text-slate-400">
+                        <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                        <p className="text-sm font-bold">X記事を生成中...</p>
+                      </div>
                     </div>
-                  </div>
-                  <textarea
-                    value={blogTitle}
-                    onChange={(e) => setBlogTitle(e.target.value)}
-                    className="w-full p-3 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
-                    rows={2}
-                  />
+                  ) : (blogTitle || blogBody) ? (
+                    <>
+                      {/* タイトルカード */}
+                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                            <Type className="w-3 h-3" /> タイトル
+                            <span className="ml-1 text-slate-300">{blogTitle.length}文字</span>
+                          </span>
+                          <button
+                            onClick={handleCopyBlogTitle}
+                            className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                              blogCopiedTarget === 'title'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            {blogCopiedTarget === 'title'
+                              ? <><Check className="w-3 h-3" /> コピー済</>
+                              : <><Copy className="w-3 h-3" /> コピー</>
+                            }
+                          </button>
+                        </div>
+                        <textarea
+                          value={blogTitle}
+                          onChange={(e) => setBlogTitle(e.target.value)}
+                          className="w-full p-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                          rows={2}
+                        />
+                      </div>
+
+                      {/* 本文カード */}
+                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                            <AlignLeft className="w-3 h-3" /> 本文
+                            <span className={`ml-1 ${blogBody.length < 2000 ? 'text-amber-500' : blogBody.length > 3000 ? 'text-red-500' : 'text-slate-300'}`}>
+                              {blogBody.length}文字{blogBody.length < 2000 ? ' (少)' : blogBody.length > 3000 ? ' ⚠' : ''}
+                            </span>
+                            <span className="ml-1 text-slate-300">h2: {(blogBody.match(/^## /gm) || []).length}</span>
+                          </span>
+                          <button
+                            onClick={handleCopyBlogBody}
+                            className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                              blogCopiedTarget === 'body'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            {blogCopiedTarget === 'body'
+                              ? <><Check className="w-3 h-3" /> コピー済</>
+                              : <><Copy className="w-3 h-3" /> コピー</>
+                            }
+                          </button>
+                        </div>
+                        <textarea
+                          value={blogBody}
+                          onChange={(e) => setBlogBody(e.target.value)}
+                          className="w-full h-[50vh] p-3 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                        />
+                      </div>
+
+                      {/* フッター */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCopyBlogAll}
+                          className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            blogCopiedTarget === 'all'
+                              ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                          }`}
+                        >
+                          {blogCopiedTarget === 'all'
+                            ? <><Check className="w-3.5 h-3.5" /> コピー済！</>
+                            : <><Copy className="w-3.5 h-3.5" /> 全コピー</>
+                          }
+                        </button>
+                        <button
+                          onClick={handleGenerateBlog}
+                          disabled={blogGenerating || noteGenerating}
+                          className="px-3 py-2 rounded-lg font-bold text-xs bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${blogGenerating ? 'animate-spin' : ''}`} /> 再生成
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                      <div className="flex flex-col items-center justify-center h-[30vh] text-slate-300">
+                        <BookOpenText className="w-10 h-10 mb-2" />
+                        <p className="text-xs font-bold">X記事はまだ生成されていません</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 本文カード */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                      <AlignLeft className="w-3.5 h-3.5" /> 本文
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-bold ${blogBody.length < 2000 ? 'text-amber-500' : blogBody.length > 3000 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {blogBody.length}文字{blogBody.length < 2000 ? ' (2000文字未満)' : blogBody.length > 3000 ? ' ⚠ 超過' : ''}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        h2: {(blogBody.match(/^## /gm) || []).length}個
-                      </span>
-                      <button
-                        onClick={handleCopyBlogBody}
-                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
-                          blogCopiedTarget === 'body'
-                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {blogCopiedTarget === 'body'
-                          ? <><Check className="w-3 h-3" /> コピー済</>
-                          : <><Copy className="w-3 h-3" /> コピー</>
-                        }
-                      </button>
+                {/* === 右カラム: note記事 === */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5 px-1">
+                    <StickyNote className="w-3.5 h-3.5" /> note 記事（3000〜4000文字）
+                  </h3>
+
+                  {noteGenerating ? (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                      <div className="flex flex-col items-center justify-center h-[30vh] text-slate-400">
+                        <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                        <p className="text-sm font-bold">note記事を生成中...</p>
+                      </div>
                     </div>
-                  </div>
-                  <textarea
-                    value={blogBody}
-                    onChange={(e) => setBlogBody(e.target.value)}
-                    className="w-full h-[55vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
-                  />
+                  ) : (noteTitle || noteBody) ? (
+                    <>
+                      {/* タイトルカード */}
+                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                            <Type className="w-3 h-3" /> タイトル
+                            <span className="ml-1 text-slate-300">{noteTitle.length}文字</span>
+                          </span>
+                          <button
+                            onClick={handleCopyNoteTitle}
+                            className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                              noteCopiedTarget === 'title'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            {noteCopiedTarget === 'title'
+                              ? <><Check className="w-3 h-3" /> コピー済</>
+                              : <><Copy className="w-3 h-3" /> コピー</>
+                            }
+                          </button>
+                        </div>
+                        <textarea
+                          value={noteTitle}
+                          onChange={(e) => setNoteTitle(e.target.value)}
+                          className="w-full p-2.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                          rows={2}
+                        />
+                      </div>
+
+                      {/* 本文カード */}
+                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                            <AlignLeft className="w-3 h-3" /> 本文
+                            <span className={`ml-1 ${noteBody.length < 3000 ? 'text-amber-500' : noteBody.length > 4000 ? 'text-red-500' : 'text-slate-300'}`}>
+                              {noteBody.length}文字{noteBody.length < 3000 ? ' (少)' : noteBody.length > 4000 ? ' ⚠' : ''}
+                            </span>
+                            <span className="ml-1 text-slate-300">h2: {(noteBody.match(/^## [^#]/gm) || []).length}</span>
+                            <span className="ml-1 text-slate-300">h3: {(noteBody.match(/^### /gm) || []).length}</span>
+                          </span>
+                          <button
+                            onClick={handleCopyNoteBody}
+                            className={`px-2.5 py-0.5 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                              noteCopiedTarget === 'body'
+                                ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            {noteCopiedTarget === 'body'
+                              ? <><Check className="w-3 h-3" /> コピー済</>
+                              : <><Copy className="w-3 h-3" /> コピー</>
+                            }
+                          </button>
+                        </div>
+                        <textarea
+                          value={noteBody}
+                          onChange={(e) => setNoteBody(e.target.value)}
+                          className="w-full h-[50vh] p-3 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                        />
+                      </div>
+
+                      {/* フッター */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCopyNoteAll}
+                          className={`flex-1 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            noteCopiedTarget === 'all'
+                              ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                          }`}
+                        >
+                          {noteCopiedTarget === 'all'
+                            ? <><Check className="w-3.5 h-3.5" /> コピー済！</>
+                            : <><Copy className="w-3.5 h-3.5" /> 全コピー</>
+                          }
+                        </button>
+                        <button
+                          onClick={handleGenerateNote}
+                          disabled={noteGenerating}
+                          className="px-3 py-2 rounded-lg font-bold text-xs bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${noteGenerating ? 'animate-spin' : ''}`} /> 再生成
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                      <div className="flex flex-col items-center justify-center h-[30vh] text-slate-300">
+                        <StickyNote className="w-10 h-10 mb-2" />
+                        <p className="text-xs font-bold">note記事はまだ生成されていません</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* フッターアクションバー */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleCopyBlogAll}
-                    className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                      blogCopiedTarget === 'all'
-                        ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                        : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-                    }`}
-                  >
-                    {blogCopiedTarget === 'all'
-                      ? <><Check className="w-4 h-4" /> 全てコピーしました！</>
-                      : <><Copy className="w-4 h-4" /> タイトル＋本文をコピー</>
-                    }
-                  </button>
-                  <button
-                    onClick={handleGenerateBlog}
-                    disabled={blogGenerating}
-                    className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${blogGenerating ? 'animate-spin' : ''}`} /> 再生成
-                  </button>
-                </div>
-              </>
+              </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
                   <BookOpenText className="w-12 h-12 mb-3" />
                   <p className="text-sm font-bold">ブログ記事を生成してください</p>
-                  <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
-                </div>
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {activeTab === 'note' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-
-            {/* ヘッダーカード */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <StickyNote className="w-4 h-4" /> note 記事
-                </h2>
-                <button
-                  onClick={handleGenerateNote}
-                  disabled={noteGenerating}
-                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {noteGenerating ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
-                  ) : (
-                    <><Wand2 className="w-3.5 h-3.5" /> note記事を生成</>
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-slate-400">
-                投稿内容をもとに、3000〜4000文字のnote向け詳細記事を自動生成します。h3見出しで細分化した詳細解説＋メルマガ誘導付き。
-              </p>
-              {blogBody && (
-                <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1">
-                  <Check className="w-3 h-3" /> X記事のh2見出しを引き継いで生成します
-                </p>
-              )}
-              {!blogBody && (
-                <p className="text-[10px] text-amber-500 mt-2 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> 先にブログタブでX記事を生成すると、h2見出しを引き継げます
-                </p>
-              )}
-            </div>
-
-            {(noteTitle || noteBody) ? (
-              <>
-                {/* タイトルカード */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                      <Type className="w-3.5 h-3.5" /> タイトル
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-slate-400">{noteTitle.length}文字</span>
-                      <button
-                        onClick={handleCopyNoteTitle}
-                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
-                          noteCopiedTarget === 'title'
-                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {noteCopiedTarget === 'title'
-                          ? <><Check className="w-3 h-3" /> コピー済</>
-                          : <><Copy className="w-3 h-3" /> コピー</>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={noteTitle}
-                    onChange={(e) => setNoteTitle(e.target.value)}
-                    className="w-full p-3 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
-                    rows={2}
-                  />
-                </div>
-
-                {/* 本文カード */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                      <AlignLeft className="w-3.5 h-3.5" /> 本文
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-[10px] font-bold ${noteBody.length < 3000 ? 'text-amber-500' : noteBody.length > 4000 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {noteBody.length}文字{noteBody.length < 3000 ? ' (3000文字未満)' : noteBody.length > 4000 ? ' ⚠ 超過' : ''}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        h2: {(noteBody.match(/^## [^#]/gm) || []).length}個
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        h3: {(noteBody.match(/^### /gm) || []).length}個
-                      </span>
-                      <button
-                        onClick={handleCopyNoteBody}
-                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
-                          noteCopiedTarget === 'body'
-                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {noteCopiedTarget === 'body'
-                          ? <><Check className="w-3 h-3" /> コピー済</>
-                          : <><Copy className="w-3 h-3" /> コピー</>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={noteBody}
-                    onChange={(e) => setNoteBody(e.target.value)}
-                    className="w-full h-[60vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
-                  />
-                </div>
-
-                {/* フッターアクションバー */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleCopyNoteAll}
-                    className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                      noteCopiedTarget === 'all'
-                        ? 'bg-blue-50 text-blue-600 border border-blue-300'
-                        : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
-                    }`}
-                  >
-                    {noteCopiedTarget === 'all'
-                      ? <><Check className="w-4 h-4" /> 全てコピーしました！</>
-                      : <><Copy className="w-4 h-4" /> タイトル＋本文をコピー</>
-                    }
-                  </button>
-                  <button
-                    onClick={handleGenerateNote}
-                    disabled={noteGenerating}
-                    className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${noteGenerating ? 'animate-spin' : ''}`} /> 再生成
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
-                  <StickyNote className="w-12 h-12 mb-3" />
-                  <p className="text-sm font-bold">note記事を生成してください</p>
-                  <p className="text-xs mt-1">投稿内容をもとにAIが詳細記事を自動作成します</p>
+                  <p className="text-xs mt-1">「記事を生成」ボタンでX記事とnote記事を同時に自動作成します</p>
                 </div>
               </div>
             )}
