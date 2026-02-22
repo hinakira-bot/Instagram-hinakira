@@ -10,7 +10,7 @@ import {
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
   BookOpenText, Link, StickyNote
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl, generateBlogImagePrompts, generateBlogImage } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl, extractArticleFromFile, generateBlogImagePrompts, generateBlogImage } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -981,6 +981,25 @@ export default function InstaFeedMaker() {
       setAiUrlFetching(false);
     }
   }, [apiKey, aiSourceUrl]);
+
+  // --- PDF/画像ファイルから記事を読み込み ---
+  const handleFileExtract = useCallback(async (file) => {
+    if (!apiKey) {
+      setAiError('APIキーを設定してください。');
+      return;
+    }
+    if (!file) return;
+    setAiUrlFetching(true);
+    setAiError(null);
+    try {
+      const articleText = await extractArticleFromFile(apiKey, file);
+      setAiSourceText(articleText);
+    } catch (e) {
+      setAiError('ファイル読み込みエラー: ' + e.message);
+    } finally {
+      setAiUrlFetching(false);
+    }
+  }, [apiKey]);
 
   // --- AI構成生成ロジック ---
   const handleAiGenerate = async () => {
@@ -2516,13 +2535,40 @@ export default function InstaFeedMaker() {
                     </button>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1.5">記事URLを入力して「読み込み」を押すと、記事内容が下のテキスト欄に自動入力されます</p>
-                  {aiError && aiError.includes('URL') && (
-                    <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 mt-2">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <span>{aiError}</span>
-                    </div>
-                  )}
                 </div>
+
+                {/* PDF/画像アップロード欄 */}
+                <div>
+                  <label className="text-sm font-bold text-slate-600 flex items-center gap-1.5 mb-2">
+                    <Upload className="w-3.5 h-3.5" /> PDF・画像から読み込み
+                  </label>
+                  <div className="flex gap-2">
+                    <label className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all text-sm text-slate-500">
+                      <Upload className="w-4 h-4" />
+                      <span>PDF・スクリーンショットをアップロード</span>
+                      <input
+                        type="file"
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileExtract(file);
+                          e.target.value = '';
+                        }}
+                        disabled={aiUrlFetching}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1.5">記事のPDFやスクリーンショットをアップロードすると、画像内のテキスト・図表も含めて記事内容を抽出します</p>
+                </div>
+
+                {/* エラー表示 */}
+                {aiError && (aiError.includes('URL') || aiError.includes('ファイル')) && (
+                  <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span>{aiError}</span>
+                  </div>
+                )}
 
                 <div className="border-t border-slate-200" />
 

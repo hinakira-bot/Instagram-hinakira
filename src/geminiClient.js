@@ -293,6 +293,74 @@ ${htmlText.slice(0, 30000)}`;
   }
 }
 
+/**
+ * PDF/画像ファイルから記事内容を全文抽出
+ * @param {string} apiKey
+ * @param {File} file - アップロードされたファイル
+ * @returns {string} 抽出された記事テキスト
+ */
+export async function extractArticleFromFile(apiKey, file) {
+  const ai = new GoogleGenAI({ apiKey });
+
+  // ファイルをbase64に変換
+  const base64Data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const mimeType = file.type || 'application/octet-stream';
+  const isPdf = mimeType === 'application/pdf';
+  const isImage = mimeType.startsWith('image/');
+
+  if (!isPdf && !isImage) {
+    throw new Error("対応ファイル形式: PDF、画像（PNG/JPG/WEBP）");
+  }
+
+  const prompt = `以下の${isPdf ? 'PDFドキュメント' : '画像'}から、記事の内容を全文抽出してください。
+
+【ルール】
+- 記事の全文をそのまま出力する（要約・省略・短縮は絶対にしない）
+- 記事のタイトル、見出し（h2/h3相当）、本文の構造がわかるように整形する
+- 画像内のテキスト、図表の内容もテキストとして抽出する
+- 画像や図表がある場合は、その内容を【画像: ○○の図解】のように説明を入れる
+- ナビゲーション、広告、サイドバー等は除外する
+- 前置きや説明は不要。記事テキストのみを出力する`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inlineData: { mimeType, data: base64Data } }
+      ]
+    }],
+    config: {
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  let text = response.text;
+
+  if (!text) {
+    const parts = response.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+      if (part.text && !part.thought) {
+        text = part.text;
+        break;
+      }
+    }
+  }
+
+  if (!text) {
+    throw new Error("ファイルから記事を抽出できませんでした。別のファイルをお試しください。");
+  }
+  return text.trim();
+}
+
 export async function generatePostStructure(apiKey, sourceText) {
   const ai = new GoogleGenAI({ apiKey });
 
