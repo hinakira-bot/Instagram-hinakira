@@ -165,6 +165,39 @@ ${slideSummary}
 /**
  * 文章からインスタ投稿構成を自動生成
  */
+// URL記事取得（URL Context）
+export async function fetchArticleFromUrl(apiKey, url) {
+  const ai = new GoogleGenAI({ apiKey });
+
+  const systemPrompt = `以下のURLの記事内容を読み取り、記事の本文テキストをそのまま抽出してください。
+
+【ルール】
+- 記事のタイトル、本文、見出しを含めてテキストとして出力する
+- ナビゲーション、広告、サイドバー、フッターなどは除外する
+- HTML タグは除外し、プレーンテキストで出力する
+- 記事の構造（見出し、段落）がわかるように改行を保持する
+- 前置きや説明は不要。記事テキストのみを出力する
+
+URL: ${url}`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: systemPrompt,
+    config: {
+      tools: [{ urlContext: {} }],
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("URLの記事取得に失敗しました。URLを確認してもう一度お試しください。");
+  }
+  return text.trim();
+}
+
 export async function generatePostStructure(apiKey, sourceText) {
   const ai = new GoogleGenAI({ apiKey });
 

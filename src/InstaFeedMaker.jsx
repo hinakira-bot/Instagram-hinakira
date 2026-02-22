@@ -8,9 +8,9 @@ import {
   Layers, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Settings, Download, Loader2, AlertCircle, Wand2, Eye, EyeOff, RefreshCw,
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
-  BookOpenText
+  BookOpenText, Link
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, fetchArticleFromUrl } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -609,6 +609,8 @@ export default function InstaFeedMaker() {
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
+  const [aiSourceUrl, setAiSourceUrl] = useState('');
+  const [aiUrlFetching, setAiUrlFetching] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiResult, setAiResult] = useState(null);
   const [aiError, setAiError] = useState(null);
@@ -934,6 +936,28 @@ export default function InstaFeedMaker() {
     setApiKey(apiKeyInput);
     setShowSettings(false);
   };
+
+  // --- URL記事取得 ---
+  const handleFetchUrl = useCallback(async () => {
+    if (!apiKey) {
+      setAiError('APIキーを設定してください。');
+      return;
+    }
+    if (!aiSourceUrl.trim()) {
+      setAiError('URLを入力してください。');
+      return;
+    }
+    setAiUrlFetching(true);
+    setAiError(null);
+    try {
+      const articleText = await fetchArticleFromUrl(apiKey, aiSourceUrl.trim());
+      setAiSourceText(articleText);
+    } catch (e) {
+      setAiError('URL記事取得エラー: ' + e.message);
+    } finally {
+      setAiUrlFetching(false);
+    }
+  }, [apiKey, aiSourceUrl]);
 
   // --- AI構成生成ロジック ---
   const handleAiGenerate = async () => {
@@ -2290,6 +2314,37 @@ export default function InstaFeedMaker() {
                 <p className="text-xs text-slate-500 mt-1">ブログ記事や文字起こしなどの文章を入力すると、AIが10枚のインスタ投稿構成を自動で作成します</p>
               </div>
               <div className="p-6 space-y-4">
+                {/* URL入力欄 */}
+                <div>
+                  <label className="text-sm font-bold text-slate-600 flex items-center gap-1.5 mb-2">
+                    <Link className="w-3.5 h-3.5" /> URLから記事を読み込み
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={aiSourceUrl}
+                      onChange={(e) => setAiSourceUrl(e.target.value)}
+                      placeholder="https://example.com/article"
+                      className="flex-1 text-sm px-4 py-2.5 border border-slate-200 rounded-lg focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none bg-slate-50/50"
+                    />
+                    <button
+                      onClick={handleFetchUrl}
+                      disabled={aiUrlFetching || !aiSourceUrl.trim()}
+                      className="px-4 py-2.5 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      {aiUrlFetching ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 読み込み中...</>
+                      ) : (
+                        <><Link className="w-3.5 h-3.5" /> 読み込み</>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1.5">記事URLを入力して「読み込み」を押すと、記事内容が下のテキスト欄に自動入力されます</p>
+                </div>
+
+                <div className="border-t border-slate-200" />
+
+                {/* テキスト入力欄 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-bold text-slate-600">元になる文章<HelpTip text="ブログ記事、動画の文字起こし、メモなどを貼り付けてください。AIがこの文章を分析して、10枚のインスタ投稿構成（表紙・導入・コンテンツ・まとめ）を自動で作成します。" /></label>
