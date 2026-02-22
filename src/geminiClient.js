@@ -191,14 +191,63 @@ ${slideSummary}
 export async function fetchArticleFromUrl(apiKey, url) {
   const ai = new GoogleGenAI({ apiKey });
 
-  const systemPrompt = `以下のURLのWebページの記事内容を、Google検索を使って取得し、本文テキストを抽出してください。
+  // Step1: CORSプロキシ経由でHTMLを取得
+  let htmlText = '';
+  const proxyUrls = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  ];
 
-URL: ${url}
+  for (const proxyUrl of proxyUrls) {
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+      if (res.ok) {
+        htmlText = await res.text();
+        break;
+      }
+    } catch (e) {
+      console.warn("Proxy fetch failed:", proxyUrl, e.message);
+    }
+  }
+
+  if (!htmlText) {
+    throw new Error("URLの取得に失敗しました。URLを確認してもう一度お試しください。");
+  }
+
+  // Step2: HTMLからテキストを抽出（DOMParser使用）
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlText, 'text/html');
+
+  // 不要な要素を削除
+  const removeSelectors = ['script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe', 'noscript', '.ad', '.ads', '.advertisement', '.sidebar', '.menu', '.navigation'];
+  removeSelectors.forEach(sel => {
+    doc.querySelectorAll(sel).forEach(el => el.remove());
+  });
+
+  // 記事本文を優先的に抽出
+  const articleEl = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.post-content') || doc.querySelector('.entry-content') || doc.querySelector('.article-body') || doc.body;
+  const rawText = articleEl?.textContent || '';
+
+  // 空白・改行を整理
+  const cleanedText = rawText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('\n');
+
+  if (cleanedText.length < 50) {
+    throw new Error("記事の本文が取得できませんでした。URLを確認してください。");
+  }
+
+  // Step3: Geminiで記事を整形・要約
+  const systemPrompt = `以下はWebページから抽出したテキストです。このテキストから記事の本文部分のみを抽出・整形してください。
+
+【抽出したテキスト（先頭8000文字）】
+${cleanedText.slice(0, 8000)}
 
 【ルール】
-- 上記URLの記事のタイトル、本文、見出しを含めてテキストとして出力する
-- 記事の構造（見出し、段落）がわかるように改行を保持する
-- ナビゲーション、広告、サイドバー、フッターなどは除外する
+- 記事のタイトル、見出し（h2/h3相当）、本文の構造がわかるように整形する
+- ナビゲーション、広告、関連記事リンク、著者プロフィール等は除外する
 - 前置きや説明は不要。記事テキストのみを出力する`;
 
   try {
@@ -206,7 +255,6 @@ URL: ${url}
       model: TEXT_MODEL,
       contents: systemPrompt,
       config: {
-        tools: [{ googleSearch: {} }],
         thinkingConfig: {
           thinkingLevel: "low",
         },
@@ -226,12 +274,13 @@ URL: ${url}
     }
 
     if (!text) {
-      throw new Error("URLの記事取得に失敗しました。URLを確認してもう一度お試しください。");
+      // フォールバック: Gemini整形失敗時はクリーンテキストをそのまま返す
+      return cleanedText.slice(0, 5000);
     }
     return text.trim();
   } catch (e) {
-    console.error("fetchArticleFromUrl error:", e);
-    throw new Error("URL記事取得エラー: " + (e.message || "不明なエラーが発生しました"));
+    console.warn("Gemini整形失敗、生テキストを返します:", e.message);
+    return cleanedText.slice(0, 5000);
   }
 }
 
