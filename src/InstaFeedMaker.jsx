@@ -3522,88 +3522,81 @@ export default function InstaFeedMaker() {
                   X記事の内容をもとに、アイキャッチ画像1枚 + h2見出しごとの図解画像を自動生成します。
                 </p>
 
-                {/* 生成済み画像の表示 */}
+                {/* 生成済み画像の表示（2列グリッド） */}
                 {(blogImages.eyecatch || blogImages.h2Images.length > 0) && (
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-3">
                     {/* アイキャッチ画像 */}
                     {blogImages.eyecatch && (
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                            <Star className="w-3.5 h-3.5" /> アイキャッチ画像
+                      <div className="border border-slate-200 rounded-lg p-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-bold text-indigo-500 flex items-center gap-1">
+                            <Star className="w-3 h-3" /> アイキャッチ
                           </span>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <a
                               href={blogImages.eyecatch}
                               download="eyecatch.png"
-                              className="px-2.5 py-1 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1"
+                              className="px-1.5 py-0.5 rounded font-bold text-[9px] bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-0.5"
                             >
-                              <Download className="w-3 h-3" /> 保存
+                              <Download className="w-2.5 h-2.5" /> 保存
                             </a>
                             <button
                               onClick={handleRegenerateBlogEyecatch}
                               disabled={blogImagesGenerating}
-                              className="px-2.5 py-1 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1 disabled:opacity-50"
+                              className="px-1.5 py-0.5 rounded font-bold text-[9px] bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-0.5 disabled:opacity-50"
                             >
-                              <RefreshCw className={`w-3 h-3 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
+                              <RefreshCw className={`w-2.5 h-2.5 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
                             </button>
                           </div>
                         </div>
                         <img
                           src={blogImages.eyecatch}
                           alt="アイキャッチ"
-                          className="w-full rounded-lg border border-slate-200 shadow-sm"
+                          className="w-full rounded border border-slate-100"
                         />
                       </div>
                     )}
 
                     {/* h2見出し図解 */}
-                    {blogImages.h2Images.length > 0 && (
-                      <div className="space-y-4">
-                        <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5" /> h2見出し図解 ({blogImages.h2Images.length}枚)
-                        </span>
-                        {blogImages.h2Images.map((h2, idx) => (
-                          <div key={idx} className="border border-slate-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-slate-600 truncate flex-1">
-                                {idx + 1}. {h2.heading}
-                              </span>
-                              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                {h2.image && (
-                                  <a
-                                    href={h2.image}
-                                    download={`h2_${idx + 1}_${h2.heading.slice(0, 10)}.png`}
-                                    className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1"
-                                  >
-                                    <Download className="w-3 h-3" /> 保存
-                                  </a>
-                                )}
-                                <button
-                                  onClick={() => handleRegenerateBlogH2Image(idx)}
-                                  disabled={blogImagesGenerating}
-                                  className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1 disabled:opacity-50"
-                                >
-                                  <RefreshCw className={`w-3 h-3 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
-                                </button>
-                              </div>
-                            </div>
-                            {h2.image ? (
-                              <img
-                                src={h2.image}
-                                alt={h2.heading}
-                                className="w-full rounded-lg border border-slate-100"
-                              />
-                            ) : h2.error ? (
-                              <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg text-xs text-red-500">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                <span>生成失敗: {h2.error}</span>
-                              </div>
-                            ) : null}
+                    {blogImages.h2Images.map((h2, idx) => (
+                      <div key={idx} className="border border-slate-200 rounded-lg p-2">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 truncate flex-1">
+                            {idx + 1}. {h2.heading}
+                          </span>
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-1">
+                            {h2.image && (
+                              <a
+                                href={h2.image}
+                                download={`h2_${idx + 1}_${h2.heading.slice(0, 10)}.png`}
+                                className="px-1.5 py-0.5 rounded font-bold text-[9px] bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-0.5"
+                              >
+                                <Download className="w-2.5 h-2.5" /> 保存
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleRegenerateBlogH2Image(idx)}
+                              disabled={blogImagesGenerating}
+                              className="px-1.5 py-0.5 rounded font-bold text-[9px] bg-slate-50 text-slate-400 border border-slate-200 hover:bg-slate-100 transition-all flex items-center gap-0.5 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-2.5 h-2.5 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
+                            </button>
                           </div>
-                        ))}
+                        </div>
+                        {h2.image ? (
+                          <img
+                            src={h2.image}
+                            alt={h2.heading}
+                            className="w-full rounded border border-slate-100"
+                          />
+                        ) : h2.error ? (
+                          <div className="flex items-center gap-1.5 p-2 bg-red-50 rounded text-[10px] text-red-500">
+                            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                            <span>生成失敗</span>
+                          </div>
+                        ) : null}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
