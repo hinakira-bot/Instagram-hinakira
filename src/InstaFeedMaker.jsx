@@ -7,9 +7,10 @@ import {
   Upload, X, Info, BoxSelect, Highlighter, Maximize, MinusSquare, Droplets,
   Layers, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Settings, Download, Loader2, AlertCircle, Wand2, Eye, EyeOff, RefreshCw,
-  ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square
+  ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
+  BookOpenText
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -599,6 +600,12 @@ export default function InstaFeedMaker() {
   const [threadsGenerating, setThreadsGenerating] = useState(false);
   const [threadsCopiedIndex, setThreadsCopiedIndex] = useState(null);
   const [threadsRegeneratingIndex, setThreadsRegeneratingIndex] = useState(null);
+
+  // --- ブログ記事生成 ---
+  const [blogTitle, setBlogTitle] = useState('');
+  const [blogBody, setBlogBody] = useState('');
+  const [blogGenerating, setBlogGenerating] = useState(false);
+  const [blogCopiedTarget, setBlogCopiedTarget] = useState(null);
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
@@ -1256,6 +1263,52 @@ export default function InstaFeedMaker() {
     });
   }, []);
 
+  // --- ブログ記事生成ハンドラー ---
+  const handleGenerateBlog = useCallback(async () => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    setBlogGenerating(true);
+    try {
+      const result = await generateBlogArticle(apiKey, {
+        coverTitle: coverTitle.replace(/\n/g, ' '),
+        coverSubtitle,
+        introText,
+        mainSlides,
+        summaryItems
+      });
+      setBlogTitle(result.title);
+      setBlogBody(result.body);
+    } catch (e) {
+      alert('ブログ記事生成エラー: ' + e.message);
+    } finally {
+      setBlogGenerating(false);
+    }
+  }, [apiKey, coverTitle, coverSubtitle, introText, mainSlides, summaryItems]);
+
+  const handleCopyBlogTitle = useCallback(() => {
+    navigator.clipboard.writeText(blogTitle).then(() => {
+      setBlogCopiedTarget('title');
+      setTimeout(() => setBlogCopiedTarget(null), 2000);
+    });
+  }, [blogTitle]);
+
+  const handleCopyBlogBody = useCallback(() => {
+    navigator.clipboard.writeText(blogBody).then(() => {
+      setBlogCopiedTarget('body');
+      setTimeout(() => setBlogCopiedTarget(null), 2000);
+    });
+  }, [blogBody]);
+
+  const handleCopyBlogAll = useCallback(() => {
+    const allText = blogTitle + '\n\n' + blogBody;
+    navigator.clipboard.writeText(allText).then(() => {
+      setBlogCopiedTarget('all');
+      setTimeout(() => setBlogCopiedTarget(null), 2000);
+    });
+  }, [blogTitle, blogBody]);
+
   const handleBatchGenerate = useCallback(async () => {
     if (!apiKey) {
       setShowSettings(true);
@@ -1422,6 +1475,7 @@ export default function InstaFeedMaker() {
               <button onClick={() => setActiveTab('ai')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'ai' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><Wand2 className="w-3 h-3" /> AI構成</button>
               <button onClick={() => setActiveTab('preview')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'preview' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><MonitorPlay className="w-3 h-3" /> 出力</button>
               <button onClick={() => setActiveTab('caption')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'caption' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><FileText className="w-3 h-3" /> キャプション</button>
+              <button onClick={() => setActiveTab('blog')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'blog' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><BookOpenText className="w-3 h-3" /> ブログ</button>
             </div>
             <button
               onClick={() => { setApiKeyInput(apiKey); setShowSettings(true); }}
@@ -2943,6 +2997,137 @@ export default function InstaFeedMaker() {
                 )}
               </div>
             </div>
+
+          </div>
+        )}
+
+        {activeTab === 'blog' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+
+            {/* ヘッダーカード */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  <BookOpenText className="w-4 h-4" /> X ブログ記事
+                </h2>
+                <button
+                  onClick={handleGenerateBlog}
+                  disabled={blogGenerating}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {blogGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                  ) : (
+                    <><Wand2 className="w-3.5 h-3.5" /> ブログ記事を生成</>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                投稿内容をもとに、2000〜3000文字のSEO対応ブログ記事を自動生成します。話し言葉・フレンドリーな文体で出力します。
+              </p>
+            </div>
+
+            {(blogTitle || blogBody) ? (
+              <>
+                {/* タイトルカード */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5" /> タイトル
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400">{blogTitle.length}文字</span>
+                      <button
+                        onClick={handleCopyBlogTitle}
+                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                          blogCopiedTarget === 'title'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {blogCopiedTarget === 'title'
+                          ? <><Check className="w-3 h-3" /> コピー済</>
+                          : <><Copy className="w-3 h-3" /> コピー</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={blogTitle}
+                    onChange={(e) => setBlogTitle(e.target.value)}
+                    className="w-full p-3 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                    rows={2}
+                  />
+                </div>
+
+                {/* 本文カード */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <AlignLeft className="w-3.5 h-3.5" /> 本文
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-bold ${blogBody.length < 2000 ? 'text-amber-500' : blogBody.length > 3000 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {blogBody.length}文字{blogBody.length < 2000 ? ' (2000文字未満)' : blogBody.length > 3000 ? ' ⚠ 超過' : ''}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        h2: {(blogBody.match(/^## /gm) || []).length}個
+                      </span>
+                      <button
+                        onClick={handleCopyBlogBody}
+                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                          blogCopiedTarget === 'body'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {blogCopiedTarget === 'body'
+                          ? <><Check className="w-3 h-3" /> コピー済</>
+                          : <><Copy className="w-3 h-3" /> コピー</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={blogBody}
+                    onChange={(e) => setBlogBody(e.target.value)}
+                    className="w-full h-[55vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                  />
+                </div>
+
+                {/* フッターアクションバー */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyBlogAll}
+                    className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                      blogCopiedTarget === 'all'
+                        ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                        : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {blogCopiedTarget === 'all'
+                      ? <><Check className="w-4 h-4" /> 全てコピーしました！</>
+                      : <><Copy className="w-4 h-4" /> タイトル＋本文をコピー</>
+                    }
+                  </button>
+                  <button
+                    onClick={handleGenerateBlog}
+                    disabled={blogGenerating}
+                    className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${blogGenerating ? 'animate-spin' : ''}`} /> 再生成
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
+                  <BookOpenText className="w-12 h-12 mb-3" />
+                  <p className="text-sm font-bold">ブログ記事を生成してください</p>
+                  <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

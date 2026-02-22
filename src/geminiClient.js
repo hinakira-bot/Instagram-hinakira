@@ -436,3 +436,96 @@ ${roleDescription}
   }
   return text.trim();
 }
+
+// ブログ記事生成
+export async function generateBlogArticle(apiKey, { coverTitle, coverSubtitle, introText, mainSlides, summaryItems }) {
+  const ai = new GoogleGenAI({ apiKey });
+  const slideSummary = (mainSlides || []).map((s, i) => `${i + 1}. ${s.title}: ${s.text}`).join('\n');
+  const summaryText = (summaryItems || []).join('、');
+
+  const systemPrompt = `あなたはSEOに強いブログ記事を書くプロのWebライターです。
+以下のInstagram投稿内容に基づいて、X（旧Twitter）向けのブログ記事を作成してください。
+
+【投稿内容】
+タイトル: ${coverTitle}
+サブタイトル: ${coverSubtitle || ''}
+導入: ${introText || ''}
+スライド内容:
+${slideSummary}
+まとめ: ${summaryText}
+
+【記事構成ルール】
+1. タイトル: 投稿内容の核心を捉えた、SEOを意識した魅力的なタイトル（30〜50文字程度）
+2. リード文: 読者の悩みや興味に寄り添う導入（2〜3文）
+3. h2見出し + 本文: 3〜6個のh2見出しで構成。各見出しの下に本文を書く
+4. まとめ段落: 記事全体を自然に締める段落
+
+【h2見出しのルール（厳守）】
+- 検索されそうなキーワードでのSEOに配慮した日本語の見出しを作成する
+- 「メリット」と「デメリット」がある場合はそれぞれ個別のh2見出しにする
+- h2見出しは見たい！と思われるような魅力的で自然、かつ簡潔にする
+- 15〜25文字で簡潔に
+- 3〜6個になるように構成する
+- まず検索意図を満たすh2見出しを作成する
+- 「はじめに」「〜とは？」のような見出しは作成しない
+- 見出しにコロン（：）を使わない
+- キーワードを使用して自然な文章にする
+
+【文体ルール（厳守）】
+- 自然な話し言葉で、感情を乗せて、口語調で書く
+- 自然に検索されそうなキーワードを使いつつ書く
+- 読みやすいように、1文ごとに改段落する
+- 指示語（これ、あれ、それ）は使わない。具体的な名詞で書く
+- 親しみやすくフレンドリーな印象を出す
+- 文末は以下のような表現を使う:
+  「〜してくださいね。」「〜なんですよね。」「〜ますよね。」「〜ですよ〜！」「〜してみてね。」「〜なんです。」
+- 記事を話し言葉で書く。読者に親しみやすく、カジュアルな会話のように感じさせる文体を心がける。ですます調で、自然な口調を意識する
+- 難しい専門用語は避けるか、わかりやすく言い換える
+
+【文字数】
+- 全体で2000〜3000文字（タイトル除く）
+- 記事全体で2000文字以上になるような記事構成にする
+
+【出力形式（厳守）】
+以下の形式で出力してください:
+---TITLE---
+記事タイトル
+---BODY---
+リード文
+
+## 見出し1
+本文
+
+## 見出し2
+本文
+
+## 見出し3
+本文
+
+まとめの段落
+
+※前置き・説明・注釈は不要。記事のみを出力してください。`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: systemPrompt,
+    config: {
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("ブログ記事の生成に失敗しました。もう一度お試しください。");
+  }
+
+  const titleMatch = text.match(/---TITLE---\s*([\s\S]*?)\s*---BODY---/);
+  const bodyMatch = text.match(/---BODY---\s*([\s\S]*)/);
+
+  return {
+    title: titleMatch ? titleMatch[1].trim() : '',
+    body: bodyMatch ? bodyMatch[1].trim() : text.trim()
+  };
+}
