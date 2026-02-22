@@ -8,9 +8,9 @@ import {
   Layers, ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Settings, Download, Loader2, AlertCircle, Wand2, Eye, EyeOff, RefreshCw,
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
-  BookOpenText, Link
+  BookOpenText, Link, StickyNote
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, fetchArticleFromUrl } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -606,6 +606,12 @@ export default function InstaFeedMaker() {
   const [blogBody, setBlogBody] = useState('');
   const [blogGenerating, setBlogGenerating] = useState(false);
   const [blogCopiedTarget, setBlogCopiedTarget] = useState(null);
+
+  // --- note記事生成 ---
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteBody, setNoteBody] = useState('');
+  const [noteGenerating, setNoteGenerating] = useState(false);
+  const [noteCopiedTarget, setNoteCopiedTarget] = useState(null);
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
@@ -1339,6 +1345,53 @@ export default function InstaFeedMaker() {
     });
   }, [blogTitle, blogBody]);
 
+  // --- note記事生成ハンドラー ---
+  const handleGenerateNote = useCallback(async () => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    setNoteGenerating(true);
+    try {
+      const result = await generateNoteArticle(apiKey, {
+        coverTitle: coverTitle.replace(/\n/g, ' '),
+        coverSubtitle,
+        introText,
+        mainSlides,
+        summaryItems,
+        xArticleBody: blogBody
+      });
+      setNoteTitle(result.title);
+      setNoteBody(result.body);
+    } catch (e) {
+      alert('note記事生成エラー: ' + e.message);
+    } finally {
+      setNoteGenerating(false);
+    }
+  }, [apiKey, coverTitle, coverSubtitle, introText, mainSlides, summaryItems, blogBody]);
+
+  const handleCopyNoteTitle = useCallback(() => {
+    navigator.clipboard.writeText(noteTitle).then(() => {
+      setNoteCopiedTarget('title');
+      setTimeout(() => setNoteCopiedTarget(null), 2000);
+    });
+  }, [noteTitle]);
+
+  const handleCopyNoteBody = useCallback(() => {
+    navigator.clipboard.writeText(noteBody).then(() => {
+      setNoteCopiedTarget('body');
+      setTimeout(() => setNoteCopiedTarget(null), 2000);
+    });
+  }, [noteBody]);
+
+  const handleCopyNoteAll = useCallback(() => {
+    const allText = noteTitle + '\n\n' + noteBody;
+    navigator.clipboard.writeText(allText).then(() => {
+      setNoteCopiedTarget('all');
+      setTimeout(() => setNoteCopiedTarget(null), 2000);
+    });
+  }, [noteTitle, noteBody]);
+
   const handleBatchGenerate = useCallback(async () => {
     if (!apiKey) {
       setShowSettings(true);
@@ -1506,6 +1559,7 @@ export default function InstaFeedMaker() {
               <button onClick={() => setActiveTab('preview')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'preview' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><MonitorPlay className="w-3 h-3" /> 出力</button>
               <button onClick={() => setActiveTab('caption')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'caption' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><FileText className="w-3 h-3" /> キャプション</button>
               <button onClick={() => setActiveTab('blog')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'blog' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><BookOpenText className="w-3 h-3" /> ブログ</button>
+              <button onClick={() => setActiveTab('note')} className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-2 ${activeTab === 'note' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500'}`}><StickyNote className="w-3 h-3" /> note</button>
             </div>
             <button
               onClick={() => { setApiKeyInput(apiKey); setShowSettings(true); }}
@@ -3192,6 +3246,150 @@ export default function InstaFeedMaker() {
                   <BookOpenText className="w-12 h-12 mb-3" />
                   <p className="text-sm font-bold">ブログ記事を生成してください</p>
                   <p className="text-xs mt-1">投稿内容をもとにAIが自動作成します</p>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+
+        {activeTab === 'note' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+
+            {/* ヘッダーカード */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  <StickyNote className="w-4 h-4" /> note 記事
+                </h2>
+                <button
+                  onClick={handleGenerateNote}
+                  disabled={noteGenerating}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {noteGenerating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 生成中...</>
+                  ) : (
+                    <><Wand2 className="w-3.5 h-3.5" /> note記事を生成</>
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                投稿内容をもとに、3000〜4000文字のnote向け詳細記事を自動生成します。h3見出しで細分化した詳細解説＋メルマガ誘導付き。
+              </p>
+              {blogBody && (
+                <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1">
+                  <Check className="w-3 h-3" /> X記事のh2見出しを引き継いで生成します
+                </p>
+              )}
+              {!blogBody && (
+                <p className="text-[10px] text-amber-500 mt-2 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> 先にブログタブでX記事を生成すると、h2見出しを引き継げます
+                </p>
+              )}
+            </div>
+
+            {(noteTitle || noteBody) ? (
+              <>
+                {/* タイトルカード */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <Type className="w-3.5 h-3.5" /> タイトル
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400">{noteTitle.length}文字</span>
+                      <button
+                        onClick={handleCopyNoteTitle}
+                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                          noteCopiedTarget === 'title'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {noteCopiedTarget === 'title'
+                          ? <><Check className="w-3 h-3" /> コピー済</>
+                          : <><Copy className="w-3 h-3" /> コピー</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={noteTitle}
+                    onChange={(e) => setNoteTitle(e.target.value)}
+                    className="w-full p-3 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                    rows={2}
+                  />
+                </div>
+
+                {/* 本文カード */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                      <AlignLeft className="w-3.5 h-3.5" /> 本文
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] font-bold ${noteBody.length < 3000 ? 'text-amber-500' : noteBody.length > 4000 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {noteBody.length}文字{noteBody.length < 3000 ? ' (3000文字未満)' : noteBody.length > 4000 ? ' ⚠ 超過' : ''}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        h2: {(noteBody.match(/^## [^#]/gm) || []).length}個
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        h3: {(noteBody.match(/^### /gm) || []).length}個
+                      </span>
+                      <button
+                        onClick={handleCopyNoteBody}
+                        className={`px-3 py-1 rounded-md font-bold text-[10px] transition-all flex items-center gap-1 ${
+                          noteCopiedTarget === 'body'
+                            ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
+                        }`}
+                      >
+                        {noteCopiedTarget === 'body'
+                          ? <><Check className="w-3 h-3" /> コピー済</>
+                          : <><Copy className="w-3 h-3" /> コピー</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    value={noteBody}
+                    onChange={(e) => setNoteBody(e.target.value)}
+                    className="w-full h-[60vh] p-4 border border-slate-200 rounded-lg text-sm text-slate-700 leading-relaxed resize-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none"
+                  />
+                </div>
+
+                {/* フッターアクションバー */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyNoteAll}
+                    className={`flex-1 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                      noteCopiedTarget === 'all'
+                        ? 'bg-blue-50 text-blue-600 border border-blue-300'
+                        : 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {noteCopiedTarget === 'all'
+                      ? <><Check className="w-4 h-4" /> 全てコピーしました！</>
+                      : <><Copy className="w-4 h-4" /> タイトル＋本文をコピー</>
+                    }
+                  </button>
+                  <button
+                    onClick={handleGenerateNote}
+                    disabled={noteGenerating}
+                    className="px-4 py-2.5 rounded-lg font-bold text-sm bg-slate-700 text-white hover:bg-slate-800 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${noteGenerating ? 'animate-spin' : ''}`} /> 再生成
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
+                  <StickyNote className="w-12 h-12 mb-3" />
+                  <p className="text-sm font-bold">note記事を生成してください</p>
+                  <p className="text-xs mt-1">投稿内容をもとにAIが詳細記事を自動作成します</p>
                 </div>
               </div>
             )}

@@ -584,3 +584,123 @@ ${slideSummary}
     body: bodyMatch ? bodyMatch[1].trim() : text.trim()
   };
 }
+
+// note記事生成（h3見出し付き詳細版）
+export async function generateNoteArticle(apiKey, { coverTitle, coverSubtitle, introText, mainSlides, summaryItems, xArticleBody }) {
+  const ai = new GoogleGenAI({ apiKey });
+  const slideSummary = (mainSlides || []).map((s, i) => `${i + 1}. ${s.title}: ${s.text}`).join('\n');
+  const summaryText = (summaryItems || []).join('、');
+
+  // X記事のh2見出しを抽出
+  const h2Headings = (xArticleBody || '').match(/^## .+$/gm) || [];
+  const h2List = h2Headings.map(h => h.replace(/^## /, '')).join('\n');
+
+  const systemPrompt = `あなたはSEOに強いブログ記事を書くプロのWebライターです。
+以下のInstagram投稿内容に基づいて、note向けの詳細なブログ記事を作成してください。
+
+【重要】まず、投稿内容のテーマに関連する最新情報や詳細情報をGoogle検索でリサーチしてください。
+複数の記事・情報源を調べて、元の投稿内容以上の有益な情報を盛り込んだ記事にしてください。
+
+【投稿内容】
+タイトル: ${coverTitle}
+サブタイトル: ${coverSubtitle || ''}
+導入: ${introText || ''}
+スライド内容:
+${slideSummary}
+まとめ: ${summaryText}
+
+${h2List ? `【X記事のh2見出し（これを必ずそのまま使用すること）】\n${h2List}` : ''}
+
+【記事構成ルール】
+1. タイトル: 投稿内容の核心を捉えた、SEOを意識した魅力的なタイトル（30〜60文字程度）
+2. リード文: 読者の悩みや興味に寄り添う導入（3〜4文）
+3. h2見出し + h3見出し + 本文: ${h2List ? '上記のX記事と同じh2見出しを使い' : '3〜6個のh2見出しで構成し'}、各h2の下にh3見出しを2〜5個作成して詳細に解説する
+4. まとめ段落: 記事全体を自然に締める
+5. 最後に以下のメルマガ誘導を必ず入れる:
+---
+AIについてもっと詳しく学びたい方は、メルマガに登録してみてくださいね。
+
+登録特典として、GPTsの作成方法やプロンプト作成方法など、すぐに使える実践ガイドをプレゼントしています。
+
+▶ メルマガ登録はこちら
+https://hinakira.net/p/r/RwKLzKtX
+---
+
+【h2見出しのルール】
+${h2List ? '- X記事で使ったh2見出しをそのまま使用すること（変更しない）' : '- 15〜25文字で簡潔に\n- 3〜6個になるように構成する'}
+- 検索されそうなキーワードでのSEOに配慮する
+- 「はじめに」「〜とは？」のような見出しは作成しない
+- 見出しにコロン（：）を使わない
+
+【h3見出しのルール】
+- 各h2の下に2〜5個（内容によっては多くてもOK）
+- h2の内容をさらに具体的に細分化する
+- 読者が知りたいポイントを個別に深掘りする
+- 15〜30文字で具体的に
+
+【文体ルール（厳守）】
+- 自然な話し言葉で、感情を乗せて、口語調で書く
+- 自然に検索されそうなキーワードを使いつつ書く
+- 読みやすいように、1文ごとに改段落する
+- 指示語（これ、あれ、それ）は使わない。具体的な名詞で書く
+- 親しみやすくフレンドリーな印象を出す
+- 文末は以下のような表現を使う:
+  「〜してくださいね。」「〜なんですよね。」「〜ますよね。」「〜ですよ〜！」「〜してみてね。」「〜なんです。」
+- 難しい専門用語は避けるか、わかりやすく言い換える
+
+【文字数】
+- 全体で3000〜4000文字（タイトル除く）
+
+【出力形式（厳守）】
+以下の形式で出力してください:
+---TITLE---
+記事タイトル
+---BODY---
+リード文
+
+## 見出し1
+
+### 小見出し1-1
+本文
+
+### 小見出し1-2
+本文
+
+## 見出し2
+
+### 小見出し2-1
+本文
+
+### 小見出し2-2
+本文
+
+まとめの段落
+
+メルマガ誘導テキスト
+
+※前置き・説明・注釈は不要。記事のみを出力してください。`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: systemPrompt,
+    config: {
+      tools: [{ googleSearch: {} }],
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("note記事の生成に失敗しました。もう一度お試しください。");
+  }
+
+  const titleMatch = text.match(/---TITLE---\s*([\s\S]*?)\s*---BODY---/);
+  const bodyMatch = text.match(/---BODY---\s*([\s\S]*)/);
+
+  return {
+    title: titleMatch ? titleMatch[1].trim() : '',
+    body: bodyMatch ? bodyMatch[1].trim() : text.trim()
+  };
+}
