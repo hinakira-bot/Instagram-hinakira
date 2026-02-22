@@ -10,7 +10,7 @@ import {
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
   BookOpenText, Link, StickyNote
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl, generateBlogImagePrompts, generateBlogImage } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -616,6 +616,11 @@ export default function InstaFeedMaker() {
   const [noteBody, setNoteBody] = useState('');
   const [noteGenerating, setNoteGenerating] = useState(false);
   const [noteCopiedTarget, setNoteCopiedTarget] = useState(null);
+
+  // --- ブログ画像生成 ---
+  const [blogImages, setBlogImages] = useState({ eyecatch: null, h2Images: [] });
+  const [blogImagesGenerating, setBlogImagesGenerating] = useState(false);
+  const [blogImagesProgress, setBlogImagesProgress] = useState('');
 
   // --- AI構成生成 ---
   const [aiSourceText, setAiSourceText] = useState('');
@@ -1419,6 +1424,87 @@ export default function InstaFeedMaker() {
       setTimeout(() => setNoteCopiedTarget(null), 2000);
     });
   }, [noteTitle, noteBody]);
+
+  // --- ブログ画像生成ハンドラ ---
+  const handleGenerateBlogImages = useCallback(async () => {
+    if (!apiKey) {
+      alert('APIキーを設定してください');
+      return;
+    }
+    if (!blogBody) {
+      alert('先にX記事を生成してください');
+      return;
+    }
+    setBlogImagesGenerating(true);
+    setBlogImagesProgress('画像プロンプトを設計中...');
+    try {
+      // Step1: テキストモデルでプロンプト設計
+      const prompts = await generateBlogImagePrompts(apiKey, { title: blogTitle, body: blogBody });
+
+      // Step2: アイキャッチ画像を生成
+      setBlogImagesProgress('アイキャッチ画像を生成中...');
+      const eyecatchImg = await generateBlogImage(apiKey, prompts.eyecatch);
+
+      // Step3: h2見出しごとの図解を順次生成
+      const h2Results = [];
+      for (let i = 0; i < prompts.h2Images.length; i++) {
+        const h2 = prompts.h2Images[i];
+        setBlogImagesProgress(`図解を生成中... (${i + 1}/${prompts.h2Images.length}) ${h2.heading}`);
+        try {
+          const img = await generateBlogImage(apiKey, h2.prompt);
+          h2Results.push({ heading: h2.heading, image: img, prompt: h2.prompt });
+        } catch (e) {
+          console.warn(`h2図解生成失敗 (${h2.heading}):`, e.message);
+          h2Results.push({ heading: h2.heading, image: null, error: e.message, prompt: h2.prompt });
+        }
+      }
+
+      setBlogImages({ eyecatch: eyecatchImg, h2Images: h2Results });
+    } catch (e) {
+      alert('ブログ画像生成エラー: ' + e.message);
+    } finally {
+      setBlogImagesGenerating(false);
+      setBlogImagesProgress('');
+    }
+  }, [apiKey, blogTitle, blogBody]);
+
+  // 個別h2図解の再生成
+  const handleRegenerateBlogH2Image = useCallback(async (index) => {
+    if (!apiKey || !blogImages.h2Images[index]) return;
+    const h2 = blogImages.h2Images[index];
+    setBlogImagesProgress(`図解を再生成中... ${h2.heading}`);
+    setBlogImagesGenerating(true);
+    try {
+      const img = await generateBlogImage(apiKey, h2.prompt);
+      setBlogImages(prev => {
+        const updated = [...prev.h2Images];
+        updated[index] = { ...updated[index], image: img, error: undefined };
+        return { ...prev, h2Images: updated };
+      });
+    } catch (e) {
+      alert('図解再生成エラー: ' + e.message);
+    } finally {
+      setBlogImagesGenerating(false);
+      setBlogImagesProgress('');
+    }
+  }, [apiKey, blogImages]);
+
+  // アイキャッチの再生成
+  const handleRegenerateBlogEyecatch = useCallback(async () => {
+    if (!apiKey || !blogBody) return;
+    setBlogImagesGenerating(true);
+    setBlogImagesProgress('アイキャッチを再生成中...');
+    try {
+      const prompts = await generateBlogImagePrompts(apiKey, { title: blogTitle, body: blogBody });
+      const eyecatchImg = await generateBlogImage(apiKey, prompts.eyecatch);
+      setBlogImages(prev => ({ ...prev, eyecatch: eyecatchImg }));
+    } catch (e) {
+      alert('アイキャッチ再生成エラー: ' + e.message);
+    } finally {
+      setBlogImagesGenerating(false);
+      setBlogImagesProgress('');
+    }
+  }, [apiKey, blogTitle, blogBody]);
 
   const handleBatchGenerate = useCallback(async () => {
     if (!apiKey) {
@@ -3402,6 +3488,7 @@ export default function InstaFeedMaker() {
                 </div>
 
               </div>
+
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex flex-col items-center justify-center h-[40vh] text-slate-300">
@@ -3409,6 +3496,116 @@ export default function InstaFeedMaker() {
                   <p className="text-sm font-bold">ブログ記事を生成してください</p>
                   <p className="text-xs mt-1">「記事を生成」ボタンでX記事とnote記事を同時に自動作成します</p>
                 </div>
+              </div>
+            )}
+
+            {/* === ブログ画像生成セクション === */}
+            {blogBody && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" /> アイキャッチ・図解 画像生成
+                  </h3>
+                  <button
+                    onClick={handleGenerateBlogImages}
+                    disabled={blogImagesGenerating}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold text-xs hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {blogImagesGenerating ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {blogImagesProgress || '生成中...'}</>
+                    ) : (
+                      <><Wand2 className="w-3.5 h-3.5" /> 画像を一括生成</>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mb-4">
+                  X記事の内容をもとに、アイキャッチ画像1枚 + h2見出しごとの図解画像を自動生成します。
+                </p>
+
+                {/* 生成済み画像の表示 */}
+                {(blogImages.eyecatch || blogImages.h2Images.length > 0) && (
+                  <div className="space-y-6">
+                    {/* アイキャッチ画像 */}
+                    {blogImages.eyecatch && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                            <Star className="w-3.5 h-3.5" /> アイキャッチ画像
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={blogImages.eyecatch}
+                              download="eyecatch.png"
+                              className="px-2.5 py-1 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1"
+                            >
+                              <Download className="w-3 h-3" /> 保存
+                            </a>
+                            <button
+                              onClick={handleRegenerateBlogEyecatch}
+                              disabled={blogImagesGenerating}
+                              className="px-2.5 py-1 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1 disabled:opacity-50"
+                            >
+                              <RefreshCw className={`w-3 h-3 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
+                            </button>
+                          </div>
+                        </div>
+                        <img
+                          src={blogImages.eyecatch}
+                          alt="アイキャッチ"
+                          className="w-full rounded-lg border border-slate-200 shadow-sm"
+                        />
+                      </div>
+                    )}
+
+                    {/* h2見出し図解 */}
+                    {blogImages.h2Images.length > 0 && (
+                      <div className="space-y-4">
+                        <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5" /> h2見出し図解 ({blogImages.h2Images.length}枚)
+                        </span>
+                        {blogImages.h2Images.map((h2, idx) => (
+                          <div key={idx} className="border border-slate-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-slate-600 truncate flex-1">
+                                {idx + 1}. {h2.heading}
+                              </span>
+                              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                {h2.image && (
+                                  <a
+                                    href={h2.image}
+                                    download={`h2_${idx + 1}_${h2.heading.slice(0, 10)}.png`}
+                                    className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1"
+                                  >
+                                    <Download className="w-3 h-3" /> 保存
+                                  </a>
+                                )}
+                                <button
+                                  onClick={() => handleRegenerateBlogH2Image(idx)}
+                                  disabled={blogImagesGenerating}
+                                  className="px-2 py-0.5 rounded-md font-bold text-[10px] bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200 transition-all flex items-center gap-1 disabled:opacity-50"
+                                >
+                                  <RefreshCw className={`w-3 h-3 ${blogImagesGenerating ? 'animate-spin' : ''}`} /> 再生成
+                                </button>
+                              </div>
+                            </div>
+                            {h2.image ? (
+                              <img
+                                src={h2.image}
+                                alt={h2.heading}
+                                className="w-full rounded-lg border border-slate-100"
+                              />
+                            ) : h2.error ? (
+                              <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg text-xs text-red-500">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span>生成失敗: {h2.error}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

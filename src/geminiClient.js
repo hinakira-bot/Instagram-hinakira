@@ -253,8 +253,8 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者は
 以下のJSON形式で**必ず**出力してください（JSONのみ、他のテキストは不要）:
 
 {
-  "coverTitle": "表紙タイトル（改行は\\nで表現。必ず2行以内・合計20文字以内に収める。短くパンチのある言葉で核心だけを凝縮する。補足情報はcoverSubtitleに逃がす。型: ①常識破壊型「○○はもう古い」 ②煽り型「まだ○○してるの？」 ③ギャップ型「○○で△△が変わる」 ④問いかけ型「○○って知ってた？」。長い説明的タイトルは絶対NG）",
-  "coverSubtitle": "サブタイトル（短いキャッチコピー、8文字以内）",
+  "coverTitle": "表紙タイトル（改行は\\nで表現。必ず2行以内・合計20文字以内に収める。短くパンチのある言葉で核心だけを凝縮する。補足情報はcoverSubtitleに逃がす。型: ①常識破壊型「○○はもう古い」 ②煽り型「まだ○○してるの？」 ③ギャップ型「○○で△△が変わる」 ④問いかけ型「○○って知ってた？」。長い説明的タイトルは絶対NG。ツール紹介系の場合はツール名をタイトルかサブタイトルのどちらかに必ず含める）",
+  "coverSubtitle": "サブタイトル（短いキャッチコピー、8文字以内。ツール紹介系でcoverTitleにツール名がない場合はここにツール名を入れる）",
   "introText": "導入文（2パートで構成。前半＝悩む人がリアルに言いそうな生々しいセリフ1つだけ（「」で囲む。吹き出しに入るので1つのみ。「あー、もう無理…」「なんで自分だけ…」レベルのリアルな痛み）。後半＝読者の心をグッと掴む興味付け。「え、マジで？」と思わせるベネフィットや意外性を短文で畳みかける。一文ごとに必ず\\nで改行する。短い文を積み重ねる形式）",
   "mainSlides": [
     {
@@ -270,6 +270,7 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者は
 - introTextは2パート構成にする。前半は悩む人がリアルに口にしそうな生々しいセリフ1つだけ（「〜」形式。吹き出しに入るので必ず1つのみ。テンプレ的な悩みではなく、本当に口に出しそうなリアルな言葉）、後半は読者の心を掴む興味付け（意外性・ベネフィット・煽りを短文で畳みかける）。一文ごとに必ず\\nで改行する。前半と後半は\\n\\nで区切る
 - mainSlidesは必ず7個（固定）。合計10枚構成=表紙1+導入1+メイン7+まとめ1
 - coverTitleは日本語で、必ず2行以内・合計20文字以内（厳守）。短くパンチのある言葉だけで構成する。長い・説明的・文字数オーバーは絶対禁止。補足はcoverSubtitleに逃がす。常識破壊・煽り・ギャップ・問いかけで「スクロールを止める」パワーを出す
+- ツール紹介・サービス紹介系の投稿では、ツール名・サービス名をcoverTitleかcoverSubtitleのどちらかに必ず含める（「何についての投稿か」が表紙で伝わるように）
 - imageDescは英語で、具体的なビジュアルを描写（AI画像生成で使うため）。以下のルールで画像タイプを判断すること:
   【手順・ハウツー・操作方法・設定方法・使い方のスライドの場合】実際のアプリ/ツール/Webサイトの画面に限りなく近いリアルなスクリーンショット画像を指定する。imageDescは必ず "Screenshot-style UI image of ..." で始めること。例: "Screenshot-style UI image of ChatGPT interface showing the prompt input area and model selector dropdown, realistic dark sidebar with conversation list, main chat area with white background, red arrow annotations pointing to the settings gear icon" のように、実際の画面レイアウト・ボタン配置・色合いを具体的に記述する。ツール名・画面名・操作対象を明記すること。
   【手順・ハウツーでないスライドの場合】通常のイメージ画像（コンセプトイラスト、アイコン的表現など）を指定する。"Screenshot-style"は使わない。
@@ -373,6 +374,7 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者の
   ③ベネフィット（「これだけで変わる」「知るだけで差がつく」など、得られる未来を見せる）
   ④悩みの言語化（「〜で困ってない？」「〜がうまくいかない人」など、読者の痛みを代弁する）
   ⑤ターゲット指定（「AI初心者の人」「副業したい人」「時短したい人」など、誰に向けた投稿か明確にする）
+- 投稿の具体的な対象（ツール名・サービス名・手法名・テーマなど）はPOST1内に必ず含めること。「何についての投稿か」が読者に伝わらないと興味を持てない。例：×「これ知らない人損してる」→○「○○（ツール名）知らない人マジで損してる」
 - 構成：①強烈な一文（上記要素を組み合わせて最大インパクト） ②強い言葉で興味付け ③次へのつなぎ（タップ誘導の締め）
   以下の書出しリストから、投稿内容に最もマッチし反応が取れそうなものを選んで使うこと:
   【断言・主張系】「断言します」「ハッキリ言います」「これはガチです」「これだけは言わせてほしい」「何度でも言います」「あえて言います」「本音を言います」「先に言っておきます」「最初に結論を言います」「1つだけ言わせて」
@@ -398,20 +400,20 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者の
   - 比較・選択系なら：「結論から言うと〜」で先に答えを見せてから理由を解説
 - その後、記事の内容をしっかり噛み砕いて解説する。まとめ・要約ではなく「読んで理解が深まる」内容
 - 難しい概念は「ざっくり言うと〜」「たとえるなら〜」で平易に説明
-- 1投稿あたり全角400文字前後（350〜450文字。絶対に500文字以内）
+- 1投稿あたり全角300〜450文字（絶対に300文字以上。500文字以内）
 
 【POST3〜最後から2番目（詳細解説パート）】
 - POST2で示した大枠・結論に対して、具体的に深掘りしていく
 - 難しい概念は「ざっくり言うと〜」「たとえるなら〜」で平易に説明
 - 具体例・数字・ビフォーアフターなど、イメージしやすい情報を入れる
-- 1投稿あたり全角400文字前後（350〜450文字。絶対に500文字以内）
+- 1投稿あたり全角300〜450文字（絶対に300文字以上。500文字以内）
 
 【最終POST（締め）】
 - 最後の解説の流れを受けて自然に締める（箇条書きまとめは不要）
 - フォロー誘導：「これからも最新情報や役立つ情報を分かりやすく解説していくので、AIを学びたい方はフォローしといてくださいね」という趣旨を自然な話し言葉で入れる
 - 本文の最後（投稿の下にぶら下げる形）に以下のインスタ誘導をそのまま入れる:
   「インスタでもわかりやすく解説してるので見てね👇」
-- 1投稿あたり全角400文字前後（350〜450文字。絶対に500文字以内）
+- 1投稿あたり全角300〜450文字（絶対に300文字以上。500文字以内）
 
 【投稿数】
 - 合計4〜9投稿。基本は7〜9投稿でしっかり解説する
@@ -419,16 +421,32 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者の
 
 ツリー投稿のみを出力してください（説明や前置きは不要）。`;
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: systemPrompt,
-    config: {
-      tools: [{ googleSearch: {} }],
-      thinkingConfig: {
-        thinkingLevel: "low",
-      },
-    }
-  });
+  let response;
+  try {
+    // まずGoogle検索付きで試行
+    response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: systemPrompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        thinkingConfig: {
+          thinkingLevel: "low",
+        },
+      }
+    });
+  } catch (e) {
+    // Google検索でエラーの場合、検索なしでフォールバック
+    console.warn("Google Search付きThreads生成でエラー。検索なしで再試行します:", e.message || e);
+    response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: systemPrompt,
+      config: {
+        thinkingConfig: {
+          thinkingLevel: "low",
+        },
+      }
+    });
+  }
 
   const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) {
@@ -460,6 +478,7 @@ export async function regenerateThreadsPost(apiKey, { allPosts, postIndex, cover
 1文目は最重要。反感を買うくらいの強い言葉で読者の手を止める。炎上スレスレの強い断言・挑発的な物言いでOK。
 以下5要素のうち必ず3つ以上をPOST1に含めること:
 ①常識破壊（思い込みをぶち壊す） ②損失回避（知らないと損・焦り） ③ベネフィット（得られる未来） ④悩みの言語化（読者の痛みを代弁） ⑤ターゲット指定（誰向けか明確に）
+投稿の具体的な対象（ツール名・サービス名・手法名・テーマなど）はPOST1内に必ず含める。「何についての投稿か」が読者に伝わるように。
 構成: ①強烈な一文（上記要素を組み合わせて最大インパクト） ②強い言葉での興味付け ③次の投稿への遷移（タップ誘導）
 冒頭文は以下から投稿内容に最もマッチし反応が取れそうなものを選ぶ:
 【断言系】「断言します」「ハッキリ言います」「これはガチです」「何度でも言います」「あえて言います」
@@ -479,7 +498,7 @@ export async function regenerateThreadsPost(apiKey, { allPosts, postIndex, cover
 解説の流れを自然に締める（箇条書きまとめは不要）。
 フォロー誘導：「これからも最新情報や役立つ情報を分かりやすく解説していくので、AIを学びたい方はフォローしといてくださいね」という趣旨を自然な話し言葉で入れる。
 本文の最後（投稿の下にぶら下げる形）に以下のインスタ誘導をそのまま入れる: 「インスタでもわかりやすく解説してるので見てね👇」
-話し言葉で書く。文字数: 全角400文字前後（350〜450文字、絶対500文字以内）`;
+話し言葉で書く。文字数: 全角300〜450文字（絶対300文字以上、500文字以内）`;
   } else {
     if (postIndex === 1) {
       roleDescription = `これはツリーのPOST2（解説の導入）です。
@@ -489,13 +508,13 @@ export async function regenerateThreadsPost(apiKey, { allPosts, postIndex, cover
 - 比較・選択系なら：「結論から言うと〜」で先に答えを見せてから理由を解説
 その後、記事内容を噛み砕いて解説（まとめ・要約ではなく理解が深まる内容）。
 難しい概念は「ざっくり言うと〜」「たとえるなら〜」で平易に説明。
-話し言葉で書く。文字数: 全角400文字前後（350〜450文字、絶対500文字以内）`;
+話し言葉で書く。文字数: 全角300〜450文字（絶対300文字以上、500文字以内）`;
     } else {
       roleDescription = `これはツリーの中間投稿（POST${postIndex + 1}/${totalPosts}）です。
 POST2で示した大枠・結論に対して、具体的に深掘りしていく。
 難しい概念は「ざっくり言うと〜」「たとえるなら〜」で平易に説明。
 具体例・数字・ビフォーアフターでイメージしやすく。
-話し言葉で書く。文字数: 全角400文字前後（350〜450文字、絶対500文字以内）`;
+話し言葉で書く。文字数: 全角300〜450文字（絶対300文字以上、500文字以内）`;
     }
   }
 
@@ -766,4 +785,115 @@ ${h2List ? '- X記事で使ったh2見出しをそのまま使用すること（
     title: titleMatch ? titleMatch[1].trim() : '',
     body: bodyMatch ? bodyMatch[1].trim() : text.trim()
   };
+}
+
+/**
+ * ブログ記事のアイキャッチ＋h2見出し図解の画像プロンプトを設計
+ * @returns {{ eyecatch: string, h2Images: { heading: string, prompt: string }[] }}
+ */
+export async function generateBlogImagePrompts(apiKey, { title, body }) {
+  const ai = new GoogleGenAI({ apiKey });
+
+  // 本文からh2見出しとその直下の内容を抽出
+  const h2Sections = [];
+  const h2Regex = /^## (.+)$/gm;
+  let match;
+  const matches = [];
+  while ((match = h2Regex.exec(body)) !== null) {
+    matches.push({ heading: match[1], index: match.index });
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].index;
+    const end = i + 1 < matches.length ? matches[i + 1].index : body.length;
+    const sectionContent = body.slice(start, end).trim();
+    h2Sections.push({ heading: matches[i].heading, content: sectionContent.slice(0, 500) });
+  }
+
+  const h2List = h2Sections.map((s, i) => `h2_${i + 1}: 「${s.heading}」\n内容抜粋: ${s.content.slice(0, 300)}`).join('\n\n');
+
+  const systemPrompt = `あなたはブログ記事用の画像プロンプトを設計するプロのデザイナーです。
+以下のブログ記事のタイトルとh2見出し情報をもとに、画像生成AIに渡すプロンプトを設計してください。
+
+【記事タイトル】
+${title}
+
+【h2見出し一覧と内容】
+${h2List}
+
+【アイキャッチ画像のルール】
+- おしゃれなイラスト調の横長画像
+- タイトルを短縮した端的なテキストを画像内に含める（日本語テキスト）
+- タイトルや記事の内容を視覚的に表現する
+- タイトル以外のテキストは表示しない（ごちゃごちゃ防止）
+- テキストは読みやすく大きめに配置
+
+【h2図解画像のルール】
+- 各h2見出しの内容を簡潔に理解できる図解画像
+- 横長サイズ
+- 背景色は白か薄く淡いカラー
+- テキストは少なめで簡潔に。日本語ベース
+- 内容が手順やハウツーであればスクリーンショット風画像にする
+- 見出しタイトルは表示しなくてOK
+- 情報の関係性がわかるような図解（フローチャート、比較表、ステップ図、概念図など適切な形式を選ぶ）
+
+以下のJSON形式で出力してください（JSONのみ、他テキスト不要）:
+{
+  "eyecatch": "アイキャッチ画像の英語プロンプト（Generate a stylish illustrated wide image... のように具体的に記述。画像内に表示する日本語テキストも指定する）",
+  "h2Images": [
+    {
+      "heading": "h2見出しテキスト（そのまま）",
+      "prompt": "図解画像の英語プロンプト（具体的な図解の内容・レイアウト・色使いを記述。画像内に表示する日本語テキストも指定する。手順系ならScreenshot-style UI imageと指定する）"
+    }
+  ]
+}`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: systemPrompt,
+    config: {
+      thinkingConfig: {
+        thinkingLevel: "low",
+      },
+    }
+  });
+
+  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("画像プロンプトの設計に失敗しました。");
+  }
+
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("JSON parse error");
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    throw new Error("画像プロンプトのパースに失敗しました。もう一度お試しください。");
+  }
+}
+
+/**
+ * ブログ用の横長画像を1枚生成（16:9）
+ * @returns {string} data:URL
+ */
+export async function generateBlogImage(apiKey, prompt) {
+  const ai = new GoogleGenAI({ apiKey });
+
+  const response = await ai.models.generateContent({
+    model: IMAGE_MODEL,
+    contents: [{ parts: [{ text: prompt }] }],
+    config: {
+      responseModalities: ["IMAGE"],
+      imageGeneration: {
+        aspectRatio: "16:9",
+      }
+    }
+  });
+
+  const part = response.candidates?.[0]?.content?.parts?.find(
+    (p) => p.inlineData
+  );
+  if (!part) {
+    throw new Error("画像が生成されませんでした。プロンプトを調整してください。");
+  }
+  return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 }
