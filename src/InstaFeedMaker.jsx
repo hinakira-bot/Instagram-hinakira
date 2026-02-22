@@ -708,7 +708,7 @@ export default function InstaFeedMaker() {
 
     // 一貫性維持のための指示（メインまたはまとめスライドの場合）
     if (type === 'main' || type === 'summary') {
-      p += `【重要】ここで作成するキャラクターは{1.表紙}のキャラクターを使用してください (Use the SAME character as Slide 1). `;
+      p += `【重要】ここで作成するキャラクターは{1.表紙}のキャラクターを使用してください (Use the SAME character as Slide 1). HAIR COLOR and HAIRSTYLE must be IDENTICAL to the cover slide — do NOT change them. `;
     }
 
     p += `Instagram feed post design, aspect ratio 4:5 vertical. `;
@@ -796,7 +796,7 @@ export default function InstaFeedMaker() {
       } else {
         // 表紙・コンテンツ・まとめ: 登録キャラを強制使用
         if (hasCharImage) {
-          p += `**CRITICAL - EXACT CHARACTER MATCH**: I have uploaded a reference image of the MAIN character. You MUST reproduce this EXACT same character in this slide. The character's face, hairstyle, clothing, art style, and proportions MUST be identical to the uploaded reference. Do NOT create a different character. `;
+          p += `**CRITICAL - EXACT CHARACTER MATCH**: I have uploaded a reference image of the MAIN character. You MUST reproduce this EXACT same character in this slide. The character's face, hairstyle, HAIR COLOR, clothing, art style, and proportions MUST be identical to the uploaded reference. **ESPECIALLY: hair color and hairstyle must NEVER change between slides — keep them pixel-perfect consistent.** Do NOT create a different character or alter any physical features. `;
           p += `Character Description: ${desc}. `;
           if (type === 'main') {
             p += `Pose/Expression: OVER-THE-TOP exaggerated reaction that matches the slide content. NOT subtle — think anime/manga level overreaction. Examples: mind-blown → jaw dropped with hands on cheeks and sparkly eyes, amazing tip → jumping with both fists pumped in the air and huge grin, warning → dramatically sweating with wide panicked eyes, great news → explosive joy with arms spread wide and tears of happiness, surprising fact → comically shocked face with mouth wide open. The character should look like they are FEELING the content intensely. Boring neutral poses are FORBIDDEN. `;
@@ -804,7 +804,7 @@ export default function InstaFeedMaker() {
             p += `Pose/Expression: ${expression}. `;
           }
         } else {
-          p += `**MAIN CHARACTER (MUST BE CONSISTENT)**: Use the EXACT same character across all slides (cover, content, summary). `;
+          p += `**MAIN CHARACTER (MUST BE CONSISTENT)**: Use the EXACT same character across all slides (cover, content, summary). **Hair color and hairstyle must NEVER change between slides — keep them perfectly consistent.** `;
           if (type === 'main') {
             p += `Character: (${desc}). Pose/Expression: OVER-THE-TOP exaggerated reaction matching the slide content — anime/manga level overreaction. Mind-blown → jaw dropped hands on cheeks, amazing → jumping fists pumped huge grin, warning → dramatically sweating wide eyes, surprising → comically shocked mouth wide open. Character must FEEL the content intensely. Boring neutral poses FORBIDDEN. `;
           } else {
