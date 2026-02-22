@@ -496,7 +496,7 @@ export default function InstaFeedMaker() {
   const [coverSubtitle, setCoverSubtitle] = useState('初心者でもOK！');
   const [coverLayout, setCoverLayout] = useState('frame_title');
   const [titleDesign, setTitleDesign] = useState('frame');
-  const [subtitleDesign, setSubtitleDesign] = useState('outline_box');
+  const [subtitleDesign, setSubtitleDesign] = useState('marker');
   const [swipeGuide, setSwipeGuide] = useState('none');
   const [eyeCatchBadge, setEyeCatchBadge] = useState('label');
   const [titleEmphasis, setTitleEmphasis] = useState('keyword_large');
@@ -848,6 +848,7 @@ export default function InstaFeedMaker() {
       }
 
       p += `Main Title: "${coverTitle.replace(/\n/g, ' ')}" (in Japanese) in center, ${font.prompt}. `;
+      p += `**COLOR EMPHASIS**: If the title contains important keywords, numbers, tool names, or emotionally strong words, render those specific words/characters in a DIFFERENT ACCENT COLOR (e.g. vivid red, orange, or yellow) to make them POP against the rest of the title text. The non-emphasized text stays in the default title color. This creates visual hierarchy and draws the eye to key information. `;
       p += `Cover Layout: ${layoutObj.prompt}. `;
       p += `Title Text Design: ${titleDesignObj.prompt}. `;
 
