@@ -192,7 +192,23 @@ URL: ${url}`;
       }
     });
 
-    const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+    console.log("fetchArticleFromUrl response:", JSON.stringify(response, null, 2));
+
+    // response.text が使えればそれを使う
+    let text = response.text;
+
+    // 使えない場合は candidates から探す
+    if (!text) {
+      const parts = response.candidates?.[0]?.content?.parts || [];
+      // thinking パートを除いてテキストパートを取得
+      for (const part of parts) {
+        if (part.text && !part.thought) {
+          text = part.text;
+          break;
+        }
+      }
+    }
+
     if (!text) {
       throw new Error("URLの記事取得に失敗しました。URLを確認してもう一度お試しください。");
     }
