@@ -65,7 +65,7 @@ const SUBTITLE_DESIGNS = [
   { id: 'outline_box', name: '枠囲み', icon: BoxSelect, prompt: 'Subtitle enclosed in a rectangular outlined box/border (not filled, just a thin border stroke in the main theme color) with clean professional styling. The box has slightly rounded corners. Text is centered inside.' },
   { id: 'pill', name: 'ピル型', icon: MessageCircle, prompt: 'Subtitle in a rounded pill/capsule shaped badge with shadow' },
   { id: 'tag', name: 'タグ風', icon: FileText, prompt: 'Subtitle styled as a tag/label with angled left edge, like a price tag' },
-  { id: 'none', name: 'なし', icon: MinusSquare, prompt: 'Subtitle displayed as plain text without any decoration' },
+  { id: 'marker', name: 'マーカー', icon: Highlighter, prompt: 'Subtitle text placed ON TOP of a bold, slightly diagonal/slanted highlighter marker stroke. The marker stroke is a wide, semi-transparent brush stroke in the theme accent color, tilted about 3-5 degrees. The subtitle text sits directly on top of the marker stroke in contrasting color, clearly readable. The marker has hand-drawn rough edges like a real highlighter pen stroke.' },
 ];
 
 const BG_IMAGE_STYLES = [
@@ -2102,7 +2102,7 @@ export default function InstaFeedMaker() {
                       </div>
                       {/* Layer 3: サブタイトル装飾 */}
                       <div>
-                        <label className="text-xs font-bold text-slate-500 block mb-1.5">🏷️ サブタイトル装飾<HelpTip text="サブタイトルの装飾です。ピル型＝丸いバッジ、タグ風＝値札風、吹き出し＝セリフ風、下線＝下線アクセント、なし＝装飾なし。" /></label>
+                        <label className="text-xs font-bold text-slate-500 block mb-1.5">🏷️ サブタイトル装飾<HelpTip text="サブタイトルの装飾です。枠囲み＝ボーダー枠、ピル型＝丸いバッジ、タグ風＝値札風、マーカー＝ナナメ蛍光マーカーの上に文字。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {SUBTITLE_DESIGNS.map((style) => {
                             const Icon = style.icon;
