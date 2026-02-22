@@ -902,7 +902,7 @@ export default function InstaFeedMaker() {
       p += `**SLIDE STRUCTURE**: Clean white background. NO wave or blob decorations. At the very top is a colored heading band (full width) in the main theme color. Below the heading band, the layout from top to bottom: (1) Bullet list inside a bordered box, (2) Character with speech bubble, (3) Footer. `;
       p += `HEADING: "まとめ" (in Japanese). Heading style: ${headingObj.prompt} Same heading band as content slides. `;
       p += `BULLET LIST BOX: Render the following bullet items EXACTLY as provided (do NOT rewrite): ${summaryItems.map((item, i) => `${i + 1}. ${item}`).join(' / ')}. Display all ${summaryItems.length} items clearly as a numbered or bulleted list. Place ONLY the bullet list inside a BORDERED BOX/FRAME (rounded rectangle with a subtle border in the theme color). Each item should be short and concise. Nothing else goes inside this box. `;
-      p += `CHARACTER & SPEECH BUBBLE: Below the bordered box, place the CHARACTER at the BOTTOM-LEFT (full body, small, compact). To the RIGHT of the character, place a SPEECH BUBBLE containing: "${summaryBubbleText}". The character and speech bubble are OUTSIDE the bordered box. `;
+      p += `CHARACTER & SPEECH BUBBLE: Below the bordered box, place the CHARACTER at the BOTTOM-LEFT (full body, small, compact) with an OVER-THE-TOP excited/satisfied expression (big smile, thumbs up, fist pump, sparkling eyes — anime-level enthusiasm). To the RIGHT of the character, place a SPEECH BUBBLE containing: "${summaryBubbleText}". The character and speech bubble are OUTSIDE the bordered box. `;
       p += `FOOTER: "📌 ブックマークがおすすめ！" text at the BOTTOM-RIGHT corner in readable size. `;
       p += `Match the heading band style as content slides. `;
     }

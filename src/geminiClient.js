@@ -272,7 +272,7 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者は
   【手順・ハウツー・操作方法・設定方法・使い方のスライドの場合】実際のアプリ/ツール/Webサイトの画面に限りなく近いリアルなスクリーンショット画像を指定する。imageDescは必ず "Screenshot-style UI image of ..." で始めること。例: "Screenshot-style UI image of ChatGPT interface showing the prompt input area and model selector dropdown, realistic dark sidebar with conversation list, main chat area with white background, red arrow annotations pointing to the settings gear icon" のように、実際の画面レイアウト・ボタン配置・色合いを具体的に記述する。ツール名・画面名・操作対象を明記すること。
   【手順・ハウツーでないスライドの場合】通常のイメージ画像（コンセプトイラスト、アイコン的表現など）を指定する。"Screenshot-style"は使わない。
 - mainSlidesのtextは「コイツ面白い」と思わせるエンタメ性のある話し言葉で書く。ただの情報解説は禁止。自分のリアクション・ツッコミ・驚き・本音を必ず混ぜる（「いやこれマジで…」「ヤバすぎて震えた」「知らんかったわ…」）。語尾は感情が伝わるもの（～ヤバくない？、～なんよマジで、～すぎて震える、～してみ？世界変わるから）。堅い敬語は絶対禁止。50〜60文字程度に収める。一文ごとに必ず\\nで改行する
-- summaryItemsは必ず7個（mainSlidesと同数）。各項目は10文字以内（厳守）。端的・シンプルな名詞句スタイル（話し言葉ではない）。長い文章は禁止。キーワードだけに絞る。画像に表示するため、長いと見切れるので必ず短くする
+- summaryItemsは必ず7個（mainSlidesと同数）。各項目は10文字以内（厳守）。画像に表示するため長いと見切れるので必ず短くする。ただし堅い・無個性な名詞句は禁止。「〜がヤバい」「〜は神」「〜で激変」「〜が最強」のように、短くてもエンタメ感・感情が伝わるキャッチーな表現にする
 - 全テキストは日本語
 - Instagramで保存・シェアされやすい、価値ある情報に整理する
 - 元の文章の核心を捉え、読みやすく構造化する`;
