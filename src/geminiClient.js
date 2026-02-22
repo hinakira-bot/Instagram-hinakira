@@ -325,6 +325,14 @@ export async function generateThreadsPosts(apiKey, { coverTitle, coverSubtitle, 
   const systemPrompt = `あなたは、Threadsで「続きを読まずにいられないツリー投稿」を作るプロです。
 「1投稿目で強く惹きつけ、自然に2投稿目へ読み進めさせる構造」を最優先してください。
 
+【重要・事前リサーチ】まず、投稿内容のテーマに関連する最新情報をGoogle検索でリサーチしてください（直近の情報を優先）。
+特にツール紹介・サービス紹介系の場合は、以下を必ず調査すること:
+- そのツールの最新機能・アップデート情報
+- 競合ツールとの比較（何が優れているか、どこが違うか）
+- なぜそのツールを使うべきかの具体的な理由
+例: AntiGravityの紹介なら、Cursor・VS Codeと比べて何が良いかを調べて言及する。
+読者が「このツールを使うべき理由」を理解できるよう、比較情報を自然に織り交ぜること。
+
 以下の投稿内容に基づいて、Threadsのツリー投稿を作成してください。
 
 【投稿内容】
@@ -411,6 +419,7 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者の
     model: TEXT_MODEL,
     contents: systemPrompt,
     config: {
+      tools: [{ googleSearch: {} }],
       thinkingConfig: {
         thinkingLevel: "low",
       },
