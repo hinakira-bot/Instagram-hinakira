@@ -2340,6 +2340,12 @@ export default function InstaFeedMaker() {
                     </button>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1.5">記事URLを入力して「読み込み」を押すと、記事内容が下のテキスト欄に自動入力されます</p>
+                  {aiError && aiError.includes('URL') && (
+                    <div className="flex items-start gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 mt-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <span>{aiError}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t border-slate-200" />

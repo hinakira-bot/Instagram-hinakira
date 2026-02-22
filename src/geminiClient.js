@@ -166,6 +166,8 @@ ${slideSummary}
  * 文章からインスタ投稿構成を自動生成
  */
 // URL記事取得（URL Context）
+const URL_CONTEXT_MODEL = "gemini-2.5-flash";
+
 export async function fetchArticleFromUrl(apiKey, url) {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -180,22 +182,24 @@ export async function fetchArticleFromUrl(apiKey, url) {
 
 URL: ${url}`;
 
-  const response = await ai.models.generateContent({
-    model: TEXT_MODEL,
-    contents: systemPrompt,
-    config: {
-      tools: [{ urlContext: {} }],
-      thinkingConfig: {
-        thinkingLevel: "low",
-      },
-    }
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: URL_CONTEXT_MODEL,
+      contents: systemPrompt,
+      config: {
+        tools: [{ urlContext: {} }],
+      }
+    });
 
-  const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error("URLの記事取得に失敗しました。URLを確認してもう一度お試しください。");
+    const text = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error("URLの記事取得に失敗しました。URLを確認してもう一度お試しください。");
+    }
+    return text.trim();
+  } catch (e) {
+    console.error("fetchArticleFromUrl error:", e);
+    throw new Error("URL記事取得エラー: " + (e.message || "不明なエラーが発生しました"));
   }
-  return text.trim();
 }
 
 export async function generatePostStructure(apiKey, sourceText) {
