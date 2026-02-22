@@ -241,8 +241,8 @@ Instagram投稿用の10枚カルーセル構成を作成してください。
 - mainSlidesは必ず7個（固定）。合計10枚構成=表紙1+導入1+メイン7+まとめ1
 - タイトルは日本語で、短く印象的に
 - imageDescは英語で、具体的なビジュアルを描写（AI画像生成で使うため）。以下のルールで画像タイプを判断すること:
-  【手順・ハウツー・操作方法のスライドの場合】スクリーンショット風のUI画像を指定する。例: "Screenshot-style UI image of [tool/app name] interface showing [specific screen/feature], dark theme window with highlighted buttons and red arrow annotations pointing to key areas, clean modern UI design, realistic software screenshot aesthetic" のように、暗い背景のウィンドウ枠、矢印やハイライト付きの操作画面風にする。
-  【手順・ハウツーでないスライドの場合】通常のイメージ画像（コンセプトイラスト、アイコン的表現など）を指定する。
+  【手順・ハウツー・操作方法・設定方法・使い方のスライドの場合】実際のアプリ/ツール/Webサイトの画面に限りなく近いリアルなスクリーンショット画像を指定する。imageDescは必ず "Screenshot-style UI image of ..." で始めること。例: "Screenshot-style UI image of ChatGPT interface showing the prompt input area and model selector dropdown, realistic dark sidebar with conversation list, main chat area with white background, red arrow annotations pointing to the settings gear icon" のように、実際の画面レイアウト・ボタン配置・色合いを具体的に記述する。ツール名・画面名・操作対象を明記すること。
+  【手順・ハウツーでないスライドの場合】通常のイメージ画像（コンセプトイラスト、アイコン的表現など）を指定する。"Screenshot-style"は使わない。
 - mainSlidesのtextは感情たっぷりのフレンドリーな話し言葉で書く（～だよー！、～なんよね、～スゴすぎぃ！！、～かもよ、～てね！、～しようね）。堅い敬語は使わない。読んでいて楽しくなる、テンション高めのトーン。驚き・感動・共感が伝わるように。50〜60文字程度に収める。一文ごとに必ず\\nで改行する
 - summaryItemsは必ず7個（mainSlidesと同数）。端的・シンプルな名詞句スタイル（話し言葉ではない）
 - 全テキストは日本語
