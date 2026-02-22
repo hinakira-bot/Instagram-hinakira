@@ -166,8 +166,6 @@ ${slideSummary}
  * 文章からインスタ投稿構成を自動生成
  */
 // URL記事取得（URL Context）
-const URL_CONTEXT_MODEL = "gemini-2.5-flash";
-
 export async function fetchArticleFromUrl(apiKey, url) {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -184,10 +182,13 @@ URL: ${url}`;
 
   try {
     const response = await ai.models.generateContent({
-      model: URL_CONTEXT_MODEL,
+      model: TEXT_MODEL,
       contents: systemPrompt,
       config: {
         tools: [{ urlContext: {} }],
+        thinkingConfig: {
+          thinkingLevel: "low",
+        },
       }
     });
 
