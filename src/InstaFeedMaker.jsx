@@ -3052,8 +3052,15 @@ export default function InstaFeedMaker() {
                           </div>
                         )}
                         {allSlides[previewSlideIndex].type === 'summary' && (
-                          <div className="w-full h-full bg-white/60 rounded-lg p-6 flex flex-col justify-center space-y-3">
-                            {summaryItems.map((item, i) => item && <div key={i} className="flex gap-2 text-xs font-bold text-slate-700"><span className="text-blue-500">✔</span> {item}</div>)}
+                          <div className="w-full h-full bg-white/70 backdrop-blur-sm rounded-xl p-4 flex flex-col justify-center">
+                            <div className="space-y-1.5">
+                              {summaryItems.map((item, i) => item && (
+                                <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 bg-white/80 rounded-lg border border-slate-200/60 shadow-sm">
+                                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold text-white flex-shrink-0 ${effectiveColors.bandStyle ? '' : effectiveColors.band || 'bg-blue-500'}`} style={effectiveColors.bandStyle || { backgroundColor: effectiveColors.accentColor || undefined }}>{i + 1}</span>
+                                  <span className="text-[10px] font-bold text-slate-700 leading-tight">{item}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
