@@ -2726,14 +2726,23 @@ export default function InstaFeedMaker() {
                   </button>
                 )}
 
-                {/* Download All */}
+                {/* Download All & Delete All */}
                 {Object.keys(generatedImages).length > 0 && (
-                  <button
-                    onClick={handleDownloadAll}
-                    className="w-full mt-2 py-2 bg-slate-800 text-white rounded-lg font-bold text-xs hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" /> 全画像をZIPダウンロード ({Object.keys(generatedImages).length}枚)
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={handleDownloadAll}
+                      className="flex-1 py-2 bg-slate-800 text-white rounded-lg font-bold text-xs hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" /> ZIPダウンロード ({Object.keys(generatedImages).length}枚)
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('生成済み画像をすべて削除しますか？')) setGeneratedImages({}); }}
+                      disabled={batchGenerating}
+                      className="px-3 py-2 bg-red-100 text-red-600 rounded-lg font-bold text-xs hover:bg-red-200 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> 全削除
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -2784,6 +2793,15 @@ export default function InstaFeedMaker() {
                     </div>
                     <div className="text-[10px] text-slate-400 truncate">{typeof slide.content === 'string' ? slide.content : 'コンテンツ詳細'}</div>
                   </div>
+                  {generatedImages[idx] && !batchGenerating && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setGeneratedImages(prev => { const next = { ...prev }; delete next[idx]; return next; }); }}
+                      className="p-1 rounded hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all flex-shrink-0"
+                      title="この画像を削除"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
                 );
               })}
