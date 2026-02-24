@@ -40,11 +40,17 @@ const THEMES = {
     atmosphere: 'energetic, playful, gen-z aesthetic, bold colors',
     colors: { text: 'text-slate-900', band: 'bg-yellow-400', bg: 'from-pink-200 to-yellow-100', accent: 'text-pink-600' }
   },
-  ai_neon: {
-    name: 'AI・サイバー',
-    bg: 'deep dark purple-black background with glowing neon circuit lines, holographic UI elements floating, digital matrix atmosphere',
-    atmosphere: 'AI-powered, cyberpunk, high-tech, glowing neon accents, sci-fi futuristic',
-    colors: { text: 'text-white', band: 'bg-purple-600', bg: 'from-purple-950 to-slate-900', accent: 'text-purple-400' }
+  rpg_fantasy: {
+    name: 'RPG・ファンタジー',
+    bg: 'fantasy RPG game UI background, aged parchment with ornate golden border decorations, magical glowing runes, medieval fantasy atmosphere',
+    atmosphere: 'RPG game style, fantasy adventure, pixel-art inspired icons, game UI aesthetic, magical and heroic, quest-like presentation',
+    colors: { text: 'text-amber-100', band: 'bg-indigo-700', bg: 'from-indigo-950 to-purple-900', accent: 'text-amber-300' }
+  },
+  flat_design: {
+    name: 'フラットデザイン',
+    bg: 'solid flat color background with geometric shapes, clean vector style, no shadows no gradients',
+    atmosphere: 'flat design, vector illustration, bold solid colors, clean geometric shapes, modern UI style, no shadows, no textures, sharp edges, material design inspired',
+    colors: { text: 'text-white', band: 'bg-cyan-600', bg: 'from-cyan-50 to-blue-50', accent: 'text-cyan-700' }
   },
   nature_warm: {
     name: 'ナチュラル・温かみ',
@@ -1710,7 +1716,8 @@ export default function InstaFeedMaker() {
           'bg-stone-200': '#a8a29e', 'bg-indigo-400': '#818cf8', 'bg-lime-400': '#a3e635',
           'bg-blue-600': '#2563eb', 'bg-yellow-400': '#facc15', 'bg-orange-500/80': '#f97316',
           'bg-navy-900': '#1e3a5f', 'bg-rose-200': '#fda4af',
-          'bg-purple-600': '#9333ea', 'bg-amber-600': '#d97706', 'bg-rose-500': '#f43f5e',
+          'bg-indigo-700': '#4338ca', 'bg-cyan-600': '#0891b2',
+          'bg-amber-600': '#d97706', 'bg-rose-500': '#f43f5e',
           'bg-amber-700': '#b45309', 'bg-emerald-500': '#10b981',
         };
         return bandColorMap[currentTheme.colors.band] || '#ec4899';
