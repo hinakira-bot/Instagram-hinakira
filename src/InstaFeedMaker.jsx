@@ -450,7 +450,7 @@ const SlideCharExpUI = ({ exp, setExp, bubble, setBubble, bubbleText, setBubbleT
 
 export default function InstaFeedMaker() {
   // --- State ---
-  const [selectedTheme, setSelectedTheme] = useState('tech_gadget');
+  const [selectedTheme, setSelectedTheme] = useState('irasutoya');
   const [fontStyle, setFontStyle] = useState('bold_sans');
   const [globalTextAlign, setGlobalTextAlign] = useState('center');
   const [headingStyle, setHeadingStyle] = useState('band_full');
