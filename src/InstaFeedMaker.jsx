@@ -862,11 +862,6 @@ export default function InstaFeedMaker() {
         }
       }
 
-      // いらすとや風などの特殊キャラスタイル適用
-      if (theme.characterStyle) {
-        p += `**CHARACTER STYLE OVERRIDE**: ${theme.characterStyle} `;
-      }
-
       if (bubble && bubbleText) {
         p += `A speech bubble (balloon) containing Japanese text "${bubbleText}" is near the character. `;
       }
@@ -945,7 +940,7 @@ export default function InstaFeedMaker() {
       } else {
         p += `UPPER ZONE — IMAGE/VISUAL (ENTERTAINMENT + CLARITY): Create a VISUALLY STRIKING and MEMORABLE image for (${data.imageDesc}). **This is NOT a boring textbook diagram.** Make it eye-catching, dramatic, and entertaining — something that makes people stop scrolling. Use BOLD visual metaphors, exaggerated contrasts (before/after with dramatic difference), provocative imagery, or surprising visual storytelling. Think: comic-book style impact, meme-worthy visuals, dramatic lighting, unexpected juxtapositions. If using a diagram/infographic, make it VISUALLY EXCITING with bold colors, dynamic layouts, and impactful iconography — NOT a plain corporate chart. **TEXT RULES: Keep text to ABSOLUTE MINIMUM — only short keywords/labels (1-3 words max). Use icons, arrows, and visual elements instead of text. Too much text causes garbled characters.** If a diagram is difficult, use recognizable imagery such as: actual tool/service logos, product images, or illustrative icons with dramatic visual treatment. The goal: viewers think "this looks interesting!" at a glance. `;
         if (theme.characterStyle) {
-          p += `**UPPER ZONE STYLE NOTE**: The upper zone image/diagram should use a STANDARD realistic or infographic style — do NOT apply the irasutoya/clip-art character style to diagrams or visual explanations in this zone. The character style only applies to the character in the lower white panel. `;
+          p += `**UPPER ZONE STYLE OVERRIDE**: Apply ${theme.characterStyle} style to the illustrations, diagrams, and visual elements in this upper zone. Use irasutoya-style flat clip-art illustrations for icons, figures, and visual metaphors. Keep it simple, cute, and friendly. The lower white panel character is NOT affected by this style — the uploaded character reference takes priority there. `;
         }
       }
       p += `LOWER ZONE — WHITE PANEL: A clean WHITE background panel/card at the bottom. **LAYOUT INSIDE WHITE PANEL: Horizontal split — LEFT side has a SMALL full-body character (compact, about 30% width), RIGHT side has the text (about 70% width). Character and text are side by side, vertically centered.** RIGHT SIDE TEXT: Render the following text EXACTLY as provided (do NOT rewrite): "${data.text.replace(/\n/g, ' ')}" (in Japanese). **TEXT RULES**: Text font size approximately 24-26px. Each sentence on its OWN separate line with clear paragraph spacing. Use dark navy (#0F2854) text color — SAME color on every content slide. Text is LEFT-ALIGNED within the right portion of the white panel. `;
