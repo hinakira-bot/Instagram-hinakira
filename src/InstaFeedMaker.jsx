@@ -964,6 +964,10 @@ export default function InstaFeedMaker() {
       p += `CHARACTER & SPEECH BUBBLE: Below the bordered box, place the CHARACTER at the BOTTOM-LEFT (full body, small, compact) with an OVER-THE-TOP excited/satisfied expression (big smile, thumbs up, fist pump, sparkling eyes — anime-level enthusiasm). To the RIGHT of the character, place a SPEECH BUBBLE containing: "${summaryBubbleText}". The character and speech bubble are OUTSIDE the bordered box. `;
       p += `FOOTER: "📌 ブックマークがおすすめ！" text at the BOTTOM-RIGHT corner in readable size. `;
       p += `Match the heading band style as content slides. `;
+      p += `**SUMMARY SLIDE VISUAL STYLE**: Apply the theme atmosphere to the overall slide design: ${theme.atmosphere}. `;
+      if (theme.characterStyle) {
+        p += `The bordered box and decorative elements should use the theme's illustration style. Any small icons or visual accents inside the summary should match this style. However, the main character uses the uploaded reference image — do NOT override the character with the theme style. `;
+      }
     }
 
     if (slideBg.type === 'theme') {
