@@ -40,6 +40,30 @@ const THEMES = {
     atmosphere: 'energetic, playful, gen-z aesthetic, bold colors',
     colors: { text: 'text-slate-900', band: 'bg-yellow-400', bg: 'from-pink-200 to-yellow-100', accent: 'text-pink-600' }
   },
+  ai_neon: {
+    name: 'AI・サイバー',
+    bg: 'deep dark purple-black background with glowing neon circuit lines, holographic UI elements floating, digital matrix atmosphere',
+    atmosphere: 'AI-powered, cyberpunk, high-tech, glowing neon accents, sci-fi futuristic',
+    colors: { text: 'text-white', band: 'bg-purple-600', bg: 'from-purple-950 to-slate-900', accent: 'text-purple-400' }
+  },
+  nature_warm: {
+    name: 'ナチュラル・温かみ',
+    bg: 'warm wooden desk surface with soft natural sunlight, green plant leaves in corner, cozy cafe atmosphere',
+    atmosphere: 'warm, organic, natural, cozy, approachable, friendly',
+    colors: { text: 'text-amber-900', band: 'bg-amber-600', bg: 'from-amber-50 to-orange-50', accent: 'text-amber-700' }
+  },
+  gradient_dream: {
+    name: 'グラデーション',
+    bg: 'smooth flowing gradient background blending from coral pink through lavender to soft sky blue, dreamy abstract color transition',
+    atmosphere: 'dreamy, creative, artistic, gradient aesthetic, soft and inspiring',
+    colors: { text: 'text-white', band: 'bg-rose-500', bg: 'from-rose-300 to-sky-300', accent: 'text-rose-600' }
+  },
+  dark_premium: {
+    name: 'ダーク・プレミアム',
+    bg: 'solid black background with subtle gold foil accents, luxury dark aesthetic, elegant geometric gold lines',
+    atmosphere: 'premium, luxury, exclusive, sophisticated, high-end, dark elegance',
+    colors: { text: 'text-amber-100', band: 'bg-amber-700', bg: 'from-gray-950 to-gray-900', accent: 'text-amber-400' }
+  },
 };
 
 const FONT_STYLES = [
@@ -1669,6 +1693,8 @@ export default function InstaFeedMaker() {
           'bg-stone-200': '#a8a29e', 'bg-indigo-400': '#818cf8', 'bg-lime-400': '#a3e635',
           'bg-blue-600': '#2563eb', 'bg-yellow-400': '#facc15', 'bg-orange-500/80': '#f97316',
           'bg-navy-900': '#1e3a5f', 'bg-rose-200': '#fda4af',
+          'bg-purple-600': '#9333ea', 'bg-amber-600': '#d97706', 'bg-rose-500': '#f43f5e',
+          'bg-amber-700': '#b45309',
         };
         return bandColorMap[currentTheme.colors.band] || '#ec4899';
       })();
@@ -1779,17 +1805,17 @@ export default function InstaFeedMaker() {
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${themeDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {themeDropdownOpen && (
-                  <div className="border-t border-slate-200 p-3 grid grid-cols-1 gap-1.5">
+                  <div className="border-t border-slate-200 p-3 grid grid-cols-2 gap-1.5">
                     {Object.entries(THEMES).map(([key, theme]) => (
                       <button
                         key={key}
                         onClick={() => { setSelectedTheme(key); setThemeDropdownOpen(false); }}
-                        className={`text-left px-3 py-2 rounded-lg text-sm border transition-all flex items-center justify-between ${
+                        className={`text-left px-3 py-2 rounded-lg text-xs font-bold border transition-all flex items-center justify-between ${
                           selectedTheme === key ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
                         <span>{theme.name}</span>
-                        {selectedTheme === key && <Check className="w-4 h-4" />}
+                        {selectedTheme === key && <Check className="w-3.5 h-3.5" />}
                       </button>
                     ))}
                   </div>
