@@ -64,6 +64,13 @@ const THEMES = {
     atmosphere: 'premium, luxury, exclusive, sophisticated, high-end, dark elegance',
     colors: { text: 'text-amber-100', band: 'bg-amber-700', bg: 'from-gray-950 to-gray-900', accent: 'text-amber-400' }
   },
+  irasutoya: {
+    name: 'いらすとや風',
+    bg: 'USE_MAIN_COLOR',
+    atmosphere: 'irasutoya-style illustration, simple cute Japanese clip-art style, flat color, soft rounded shapes, friendly and approachable, warm pastel tones',
+    characterStyle: 'irasutoya-style character (Japanese clip-art illustration style): simple round face, dot eyes, small nose, soft rounded body proportions, flat coloring with no shading, thick simple outlines, cute and friendly expression. Do NOT use anime/manga style — use the distinctive irasutoya flat illustration style.',
+    colors: { text: 'text-slate-800', band: 'bg-emerald-500', bg: 'from-emerald-50 to-teal-50', accent: 'text-emerald-700' }
+  },
 };
 
 const FONT_STYLES = [
@@ -766,7 +773,12 @@ export default function InstaFeedMaker() {
         p += `Background: Clean neutral background. `;
       }
     } else {
-      p += `Background: ${theme.bg}. `;
+      if (theme.bg === 'USE_MAIN_COLOR') {
+        const bgColor = useCustomMainColor ? validMainColor : frameColor;
+        p += `Background: Solid flat color background (hex color ${bgColor}), simple and clean with soft pastel tone. `;
+      } else {
+        p += `Background: ${theme.bg}. `;
+      }
     }
 
     if (slideBg.desc && slideBg.desc.trim()) {
@@ -850,6 +862,11 @@ export default function InstaFeedMaker() {
         }
       }
 
+      // いらすとや風などの特殊キャラスタイル適用
+      if (theme.characterStyle) {
+        p += `**CHARACTER STYLE OVERRIDE**: ${theme.characterStyle} `;
+      }
+
       if (bubble && bubbleText) {
         p += `A speech bubble (balloon) containing Japanese text "${bubbleText}" is near the character. `;
       }
@@ -927,6 +944,9 @@ export default function InstaFeedMaker() {
         p += `UPPER ZONE — REALISTIC SCREENSHOT IMAGE: **OVERRIDE ALL DEFAULT DESIGN/THEME/CHARACTER SETTINGS FOR THIS ZONE.** Do NOT use the default decorative style, character, or color theme for this image area. Instead, create a PHOTOREALISTIC screenshot of the actual application/tool/website interface described below. The screenshot must look as close to the REAL software screen as possible — accurate UI elements, real button placements, actual menu layouts, proper color schemes of the real app. Add RED ARROW annotations (🔴➡️) and RED CIRCLE highlights pointing to the key areas being explained. Use a clean, realistic software aesthetic. Image description: (${data.imageDesc}). `;
       } else {
         p += `UPPER ZONE — IMAGE/VISUAL (ENTERTAINMENT + CLARITY): Create a VISUALLY STRIKING and MEMORABLE image for (${data.imageDesc}). **This is NOT a boring textbook diagram.** Make it eye-catching, dramatic, and entertaining — something that makes people stop scrolling. Use BOLD visual metaphors, exaggerated contrasts (before/after with dramatic difference), provocative imagery, or surprising visual storytelling. Think: comic-book style impact, meme-worthy visuals, dramatic lighting, unexpected juxtapositions. If using a diagram/infographic, make it VISUALLY EXCITING with bold colors, dynamic layouts, and impactful iconography — NOT a plain corporate chart. **TEXT RULES: Keep text to ABSOLUTE MINIMUM — only short keywords/labels (1-3 words max). Use icons, arrows, and visual elements instead of text. Too much text causes garbled characters.** If a diagram is difficult, use recognizable imagery such as: actual tool/service logos, product images, or illustrative icons with dramatic visual treatment. The goal: viewers think "this looks interesting!" at a glance. `;
+        if (theme.characterStyle) {
+          p += `**UPPER ZONE STYLE NOTE**: The upper zone image/diagram should use a STANDARD realistic or infographic style — do NOT apply the irasutoya/clip-art character style to diagrams or visual explanations in this zone. The character style only applies to the character in the lower white panel. `;
+        }
       }
       p += `LOWER ZONE — WHITE PANEL: A clean WHITE background panel/card at the bottom. **LAYOUT INSIDE WHITE PANEL: Horizontal split — LEFT side has a SMALL full-body character (compact, about 30% width), RIGHT side has the text (about 70% width). Character and text are side by side, vertically centered.** RIGHT SIDE TEXT: Render the following text EXACTLY as provided (do NOT rewrite): "${data.text.replace(/\n/g, ' ')}" (in Japanese). **TEXT RULES**: Text font size approximately 24-26px. Each sentence on its OWN separate line with clear paragraph spacing. Use dark navy (#0F2854) text color — SAME color on every content slide. Text is LEFT-ALIGNED within the right portion of the white panel. `;
       p += `FOOTER: "スワイプ ▸▸" text in readable size at the bottom-right corner of the white panel. `;
@@ -1694,7 +1714,7 @@ export default function InstaFeedMaker() {
           'bg-blue-600': '#2563eb', 'bg-yellow-400': '#facc15', 'bg-orange-500/80': '#f97316',
           'bg-navy-900': '#1e3a5f', 'bg-rose-200': '#fda4af',
           'bg-purple-600': '#9333ea', 'bg-amber-600': '#d97706', 'bg-rose-500': '#f43f5e',
-          'bg-amber-700': '#b45309',
+          'bg-amber-700': '#b45309', 'bg-emerald-500': '#10b981',
         };
         return bandColorMap[currentTheme.colors.band] || '#ec4899';
       })();
