@@ -297,19 +297,20 @@ ${htmlText.slice(0, 30000)}`;
  * PDF/画像ファイルから記事内容を全文抽出
  * @param {string} apiKey
  * @param {File} file - アップロードされたファイル
- * @returns {string} 抽出された記事テキスト
+ * @returns {{ text: string, sourceDataUrl: string }} 抽出テキストと元ファイルのdata:URL
  */
 export async function extractArticleFromFile(apiKey, file) {
   const ai = new GoogleGenAI({ apiKey });
 
-  // ファイルをbase64に変換
-  const base64Data = await new Promise((resolve, reject) => {
+  // ファイルをdata:URLとして読み込み（テキスト抽出用 + 参照画像として保持用）
+  const dataUrl = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 
+  const base64Data = dataUrl.split(',')[1];
   const mimeType = file.type || 'application/octet-stream';
   const isPdf = mimeType === 'application/pdf';
   const isImage = mimeType.startsWith('image/');
@@ -358,16 +359,19 @@ export async function extractArticleFromFile(apiKey, file) {
   if (!text) {
     throw new Error("ファイルから記事を抽出できませんでした。別のファイルをお試しください。");
   }
-  return text.trim();
+
+  return { text: text.trim(), sourceDataUrl: dataUrl };
 }
 
-export async function generatePostStructure(apiKey, sourceText) {
+export async function generatePostStructure(apiKey, sourceText, sourceImages = []) {
   const ai = new GoogleGenAI({ apiKey });
+
+  const hasSourceImages = sourceImages.length > 0;
 
   const systemPrompt = `あなたはInstagramカルーセル投稿の構成を考えるプロのSNSマーケターです。
 ユーザーから与えられた文章（ブログ記事、動画の文字起こし、メモなど）を分析し、
 Instagram投稿用の10枚カルーセル構成を作成してください。
-
+${hasSourceImages ? '\n【参照画像について】\nユーザーが元記事のPDFやスクリーンショットも一緒に提供しています。imageDescを書く際は、元記事に含まれるビジュアル（図解、スクリーンショット、イラスト等）を参考にして、元のイメージに近い画像が生成されるよう具体的に記述してください。元記事の画像をそのまま再現してもOK、アレンジしてもOKです。\n' : ''}
 【最重要方針】SNSはエンタメ。「コイツ面白いな」「また見たい」と思わせることが最優先。
 普通の言い回し・テンプレ的な表現は禁止。読者の印象に残る、個性的でキャラの立った文章を書くこと。
 
@@ -406,9 +410,28 @@ AI初心者〜中級者。コーディングは初心者レベル。発信者は
 - Instagramで保存・シェアされやすい、価値ある情報に整理する
 - 元の文章の核心を捉え、読みやすく構造化する`;
 
+  // ソース画像がある場合はcontentsにinlineDataも含める
+  let contents;
+  if (hasSourceImages) {
+    const imageParts = sourceImages.filter(Boolean).map((dataUrl) => {
+      const b64 = dataUrl.split(',')[1];
+      const mMatch = dataUrl.match(/data:([^;]+);/);
+      const mime = mMatch ? mMatch[1] : 'image/png';
+      return { inlineData: { mimeType: mime, data: b64 } };
+    });
+    contents = [{
+      parts: [
+        { text: systemPrompt + "\n\n---\n\n以下の文章を分析して、Instagram投稿構成を作成してください:\n\n" + sourceText },
+        ...imageParts
+      ]
+    }];
+  } else {
+    contents = systemPrompt + "\n\n---\n\n以下の文章を分析して、Instagram投稿構成を作成してください:\n\n" + sourceText;
+  }
+
   const response = await ai.models.generateContent({
     model: TEXT_MODEL,
-    contents: systemPrompt + "\n\n---\n\n以下の文章を分析して、Instagram投稿構成を作成してください:\n\n" + sourceText,
+    contents,
     config: {
       responseMimeType: "application/json",
       thinkingConfig: {

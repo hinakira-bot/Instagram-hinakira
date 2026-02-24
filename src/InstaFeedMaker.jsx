@@ -629,6 +629,7 @@ export default function InstaFeedMaker() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiResult, setAiResult] = useState(null);
   const [aiError, setAiError] = useState(null);
+  const [aiSourceImages, setAiSourceImages] = useState([]); // 元記事のPDF/画像（data:URL）
 
   // --- API Settings ---
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
@@ -992,8 +993,12 @@ export default function InstaFeedMaker() {
     setAiUrlFetching(true);
     setAiError(null);
     try {
-      const articleText = await extractArticleFromFile(apiKey, file);
-      setAiSourceText(articleText);
+      const result = await extractArticleFromFile(apiKey, file);
+      setAiSourceText(result.text);
+      // 元ファイルの画像を保持（AI構成時の参照用）
+      if (result.sourceDataUrl) {
+        setAiSourceImages(prev => [...prev, result.sourceDataUrl]);
+      }
     } catch (e) {
       setAiError('ファイル読み込みエラー: ' + e.message);
     } finally {
@@ -1009,7 +1014,7 @@ export default function InstaFeedMaker() {
     setAiError(null);
     setAiResult(null);
     try {
-      const result = await generatePostStructure(apiKey, aiSourceText);
+      const result = await generatePostStructure(apiKey, aiSourceText, aiSourceImages);
       setAiResult(result);
     } catch (err) {
       setAiError(err.message || 'AI構成の生成に失敗しました。');
@@ -2559,7 +2564,30 @@ export default function InstaFeedMaker() {
                       />
                     </label>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1.5">記事のPDFやスクリーンショットをアップロードすると、画像内のテキスト・図表も含めて記事内容を抽出します</p>
+                  <p className="text-[10px] text-slate-400 mt-1.5">記事のPDFやスクリーンショットをアップロードすると、画像内のテキスト・図表も含めて記事内容を抽出します。複数アップロードも可。</p>
+                  {/* 保持しているソース画像サムネイル */}
+                  {aiSourceImages.length > 0 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-bold text-indigo-500">📎 参照画像 ({aiSourceImages.length}枚) — AI構成時に画像も参考にします</span>
+                        <button
+                          onClick={() => setAiSourceImages([])}
+                          className="text-[10px] font-bold text-red-400 hover:text-red-600 transition-all"
+                        >全クリア</button>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {aiSourceImages.map((img, i) => (
+                          <div key={i} className="relative group">
+                            <img src={img} alt={`参照${i + 1}`} className="w-16 h-16 object-cover rounded border border-slate-200" />
+                            <button
+                              onClick={() => setAiSourceImages(prev => prev.filter((_, j) => j !== i))}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* エラー表示 */}
