@@ -185,16 +185,15 @@ ${slideSummary}
 }
 
 /**
- * hinakira.com/ai-news/ から最新Pickup記事を取得（API経由）
+ * hinakira.com/ai-news/ から最新Pickup記事を取得（静的JSON経由）
  * @returns {{ title: string, text: string, url: string, thumbnail: string|null }}
  */
 export async function fetchPickupArticle() {
-  const apiUrl = 'https://hinakira.com/ai-news/api/pickup';
+  const jsonUrl = 'https://hinakira.com/ai-news/data/pickup.json';
 
-  const res = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
+  const res = await fetch(jsonUrl, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Pickup API エラー (${res.status})`);
+    throw new Error(`Pickup記事の取得に失敗しました (${res.status})`);
   }
 
   const article = await res.json();
