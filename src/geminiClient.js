@@ -185,65 +185,19 @@ ${slideSummary}
 }
 
 /**
- * hinakira.com/ai-news/ から最新Pickup記事を取得
+ * hinakira.com/ai-news/ から最新Pickup記事を取得（API経由）
  * @returns {{ title: string, text: string, url: string, thumbnail: string|null }}
  */
 export async function fetchPickupArticle() {
-  const targetUrl = 'https://hinakira.com/ai-news/';
-  const proxyUrls = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-  ];
+  const apiUrl = 'https://hinakira.com/ai-news/api/pickup';
 
-  let htmlText = '';
-  for (const proxyUrl of proxyUrls) {
-    try {
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
-      if (res.ok) { htmlText = await res.text(); break; }
-    } catch (e) {
-      console.warn("Pickup fetch proxy failed:", proxyUrl, e.message);
-    }
+  const res = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Pickup API エラー (${res.status})`);
   }
-  if (!htmlText) throw new Error("AI NEWSページの取得に失敗しました。");
 
-  // RSCペイロードからis_pick:trueの記事JSONを抽出
-  const pickMatch = htmlText.match(/"is_pick"\s*:\s*true/);
-  if (!pickMatch) throw new Error("本日のPickup記事が見つかりませんでした。");
-
-  // is_pick:trueを含むJSON objectブロックを見つける
-  // 記事JSONは {"id": ... , "is_pick":true, ...} の形
-  // pickMatchのindexから前後を探索して完全なJSONオブジェクトを抽出
-  const pos = pickMatch.index;
-  let braceStart = -1;
-  let depth = 0;
-  // 前方に向かって開き括弧を探す
-  for (let i = pos; i >= 0; i--) {
-    if (htmlText[i] === '}') depth++;
-    if (htmlText[i] === '{') {
-      if (depth === 0) { braceStart = i; break; }
-      depth--;
-    }
-  }
-  if (braceStart === -1) throw new Error("Pickup記事データの解析に失敗しました。");
-
-  // 対応する閉じ括弧を探す
-  depth = 0;
-  let braceEnd = -1;
-  for (let i = braceStart; i < htmlText.length; i++) {
-    if (htmlText[i] === '{') depth++;
-    if (htmlText[i] === '}') {
-      depth--;
-      if (depth === 0) { braceEnd = i; break; }
-    }
-  }
-  if (braceEnd === -1) throw new Error("Pickup記事データの解析に失敗しました。");
-
-  let article;
-  try {
-    article = JSON.parse(htmlText.slice(braceStart, braceEnd + 1));
-  } catch (e) {
-    throw new Error("Pickup記事のJSON解析に失敗しました。");
-  }
+  const article = await res.json();
 
   // 記事テキストを組み立て
   const parts = [];
