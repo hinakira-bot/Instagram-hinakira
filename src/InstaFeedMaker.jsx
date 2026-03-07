@@ -10,7 +10,7 @@ import {
   ChevronDown, ArrowRight, Hash, Award, Star, Zap, Grid3x3, Columns, Square,
   BookOpenText, Link, StickyNote
 } from 'lucide-react';
-import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl, extractArticleFromFile, generateBlogImagePrompts, generateBlogImage } from './geminiClient';
+import { generateImage, generateImageWithReference, generateImageWithMultipleReferences, generatePostStructure, generateCaption, generateThreadsPosts, regenerateThreadsPost, generateBlogArticle, generateNoteArticle, fetchArticleFromUrl, extractArticleFromFile, generateBlogImagePrompts, generateBlogImage, fetchPickupArticle } from './geminiClient';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -1056,6 +1056,22 @@ export default function InstaFeedMaker() {
       setAiUrlFetching(false);
     }
   }, [apiKey]);
+
+  // --- AI NEWS Pickup記事取り込み ---
+  const [pickupFetching, setPickupFetching] = useState(false);
+  const handleFetchPickup = useCallback(async () => {
+    setPickupFetching(true);
+    setAiError(null);
+    try {
+      const result = await fetchPickupArticle();
+      setAiSourceText(result.text);
+      if (result.url) setAiSourceUrl(result.url);
+    } catch (e) {
+      setAiError('Pickup取得エラー: ' + e.message);
+    } finally {
+      setPickupFetching(false);
+    }
+  }, []);
 
   // --- AI構成生成ロジック ---
   const handleAiGenerate = async () => {
@@ -2568,6 +2584,19 @@ export default function InstaFeedMaker() {
                 <p className="text-xs text-slate-500 mt-1">ブログ記事や文字起こしなどの文章を入力すると、AIが10枚のインスタ投稿構成を自動で作成します</p>
               </div>
               <div className="p-6 space-y-4">
+                {/* AI NEWS Pickup取り込みボタン */}
+                <button
+                  onClick={handleFetchPickup}
+                  disabled={pickupFetching || aiUrlFetching}
+                  className="w-full py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {pickupFetching ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Pickup記事を取得中...</>
+                  ) : (
+                    <><Zap className="w-4 h-4" /> AI NEWS 最新Pickupを取り込む</>
+                  )}
+                </button>
+
                 {/* URL入力欄 */}
                 <div>
                   <label className="text-sm font-bold text-slate-600 flex items-center gap-1.5 mb-2">

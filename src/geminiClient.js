@@ -185,6 +185,88 @@ ${slideSummary}
 }
 
 /**
+ * hinakira.com/ai-news/ から最新Pickup記事を取得
+ * @returns {{ title: string, text: string, url: string, thumbnail: string|null }}
+ */
+export async function fetchPickupArticle() {
+  const targetUrl = 'https://hinakira.com/ai-news/';
+  const proxyUrls = [
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+    `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+  ];
+
+  let htmlText = '';
+  for (const proxyUrl of proxyUrls) {
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+      if (res.ok) { htmlText = await res.text(); break; }
+    } catch (e) {
+      console.warn("Pickup fetch proxy failed:", proxyUrl, e.message);
+    }
+  }
+  if (!htmlText) throw new Error("AI NEWSページの取得に失敗しました。");
+
+  // RSCペイロードからis_pick:trueの記事JSONを抽出
+  const pickMatch = htmlText.match(/"is_pick"\s*:\s*true/);
+  if (!pickMatch) throw new Error("本日のPickup記事が見つかりませんでした。");
+
+  // is_pick:trueを含むJSON objectブロックを見つける
+  // 記事JSONは {"id": ... , "is_pick":true, ...} の形
+  // pickMatchのindexから前後を探索して完全なJSONオブジェクトを抽出
+  const pos = pickMatch.index;
+  let braceStart = -1;
+  let depth = 0;
+  // 前方に向かって開き括弧を探す
+  for (let i = pos; i >= 0; i--) {
+    if (htmlText[i] === '}') depth++;
+    if (htmlText[i] === '{') {
+      if (depth === 0) { braceStart = i; break; }
+      depth--;
+    }
+  }
+  if (braceStart === -1) throw new Error("Pickup記事データの解析に失敗しました。");
+
+  // 対応する閉じ括弧を探す
+  depth = 0;
+  let braceEnd = -1;
+  for (let i = braceStart; i < htmlText.length; i++) {
+    if (htmlText[i] === '{') depth++;
+    if (htmlText[i] === '}') {
+      depth--;
+      if (depth === 0) { braceEnd = i; break; }
+    }
+  }
+  if (braceEnd === -1) throw new Error("Pickup記事データの解析に失敗しました。");
+
+  let article;
+  try {
+    article = JSON.parse(htmlText.slice(braceStart, braceEnd + 1));
+  } catch (e) {
+    throw new Error("Pickup記事のJSON解析に失敗しました。");
+  }
+
+  // 記事テキストを組み立て
+  const parts = [];
+  if (article.title) parts.push(`# ${article.title}`);
+  if (article.summary) parts.push(`\n## 概要\n${article.summary}`);
+  if (article.key_points && article.key_points.length > 0) {
+    parts.push(`\n## キーポイント\n${article.key_points.map((p, i) => `${i + 1}. ${p}`).join('\n')}`);
+  }
+  if (article.commentary) parts.push(`\n## コメンタリー\n${article.commentary}`);
+  if (article.content) parts.push(`\n## 本文\n${article.content}`);
+  if (article.faq && article.faq.length > 0) {
+    parts.push(`\n## FAQ\n${article.faq.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n')}`);
+  }
+
+  return {
+    title: article.title || '',
+    text: parts.join('\n'),
+    url: article.url || '',
+    thumbnail: article.thumbnail_url || null,
+  };
+}
+
+/**
  * 文章からインスタ投稿構成を自動生成
  */
 // URL記事取得（Google Search Grounding経由）
